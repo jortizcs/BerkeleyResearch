@@ -22,11 +22,11 @@ x = newData;
 % [B, A] = butter(1, wn, 'stop');
 % newData = filter(B, A, AudioData);
 % x = newData;  
-newData = abs(newData); %for computing the cpm
+% newData = abs(newData); %for computing the cpm
 
-%downsample by 100
-dsData = downsample(newData, 50);
-dsT = downsample(t, 50);
+% %downsample by 100
+% dsData = downsample(newData, 50);
+% dsT = downsample(t, 50);
 
 %average, downsample by 100
 % j = 1;
@@ -41,32 +41,32 @@ dsT = downsample(t, 50);
 %     end
 % end
 
-%de-noise
-length = size(dsData,1);
-dnData = zeros(length,1);
-tmp = 0;
-for k= 1:length
-    if mod(k,80)~=0
-        tmp = tmp + dsData(k);
-    else
-        tmp = tmp + dsData(k);
-        tmp = tmp/80;
-        for j = k-79:k
-            if j == 1
-                dnData(j) = 0;
-            elseif dsData(j)>2*tmp
-                dnData(j) = dnData(j-1);
-            else
-                dnData(j) = dsData(j); 
-            end
-        end
-        tmp = 0;
-    end
-end
+% %de-noise
+% length = size(dsData,1);
+% dnData = zeros(length,1);
+% tmp = 0;
+% for k= 1:length
+%     if mod(k,80)~=0
+%         tmp = tmp + dsData(k);
+%     else
+%         tmp = tmp + dsData(k);
+%         tmp = tmp/80;
+%         for j = k-79:k
+%             if j == 1
+%                 dnData(j) = 0;
+%             elseif dsData(j)>2*tmp
+%                 dnData(j) = dnData(j-1);
+%             else
+%                 dnData(j) = dsData(j); 
+%             end
+%         end
+%         tmp = 0;
+%     end
+% end
 
-%downsample by 4
-dssData = downsample(dnData, 4);
-dsTT = downsample(t,200);
+% %downsample by 4
+% dssData = downsample(dnData, 4);
+% dsTT = downsample(t,200);
 
 %average, downsample again by 10
 % length = size(dnData,1);
@@ -87,13 +87,13 @@ dsTT = downsample(t,200);
 % B = fir1(fs/200*2-1, 0.6/(fs/2/200), 'low', w); %window-based FIR
 % A = 1;
 % lpfData = filter(B, A, dssData);
-wn = 0.6/(fs/2/200);
-[B, A] = butter(3, wn, 'low');
-lpfData = filter(B, A, dssData);
+% wn = 0.6/(fs/2/200);
+% [B, A] = butter(3, wn, 'low');
+% lpfData = filter(B, A, dssData);
 
 %derivative
-dt = diff(lpfData);
-dt = dt/(dsTT(2)-dsTT(1));
+% dt = diff(lpfData);
+% dt = dt/(dsTT(2)-dsTT(1));
 
 %spectrogram
 figure
@@ -105,53 +105,53 @@ xlabel('Time (Seconds)')
 ylabel('Frequency (Hz)')
 
 %PSD
-% %x = newData;  
-% %x = AudioData;
-% % h = spectrum.welch;                  % Create a Welch spectral estimator. 
-% tt = 0.1;
-% peak = zeros(10,3);
-% ctr = 1;
-% figure %for distribution
-% hold on %for distribution
-% while tt<max(t)
-%     str = sprintf('Start T = %.2fs', tt);
-%     % figure %for psd
-%     % [psd1, F] = pyulear(x(tt*fs:(tt+0.3)*fs),4,fs);
-%     % [psd2, F] = pyulear(x(tt*fs:(tt+0.3)*fs),25,fs);
-%     % [psd3, F] = pyulear(x(tt*fs:(tt+0.3)*fs),50,fs);
-%     span = 6;
-%     for k = 1:span
-%         [psd, F] = pyulear(x(tt*fs:(tt+0.3)*fs),100,fs);
-% %         subplot(span,1,k) %for psd
-% %         plot(F/pi*fs/2, psd)  %for psd
-% %         axis([0 1000 0 1.25*max(psd)])    %for psd
-%         tt = tt + 0.15;
-% 
-%         %peak & BW
-%         pos = find(psd == max(psd));%index of peak in psd matrix
-%         peak(ctr,1) = F(pos);%freq of peak
-%         low=0;
-%         high=0;
-%         tmp = pos;
-%         while psd(tmp)>0.05*psd(pos)
-%             tmp = tmp-1;
-%         end
-%         low = F(tmp);
-%         tmp = pos;
-%         while psd(tmp)>0.05*psd(pos)
-%             tmp = tmp+1;
-%         end
-%         high = F(tmp);
-%         peak(ctr,2) = high-low;
-%         ctr = ctr+1;
-%     end
-%     plot(peak(:,1), peak(:,2),'r.','MarkerSize',14); %for distribution
-%     xlabel('Frequency (Hz)')
-% end
-% peak = peak/pi*fs/2;
-% %psd(h,x,'Fs',fs);                    % Calculate and plot the one-sided psd.
-% %hpsd = psd(h,x,'ConfLevel',.98);     % psd with confidence level
-% %figure,plot(hpsd)
+%x = newData;  
+%x = AudioData;
+% h = spectrum.welch;                  % Create a Welch spectral estimator. 
+tt = 0.1;
+peak = zeros(10,3);
+ctr = 1;
+figure %for distribution
+hold on %for distribution
+while tt<max(t)
+    str = sprintf('Start T = %.2fs', tt);
+    % figure %for psd
+    % [psd1, F] = pyulear(x(tt*fs:(tt+0.3)*fs),4,fs);
+    % [psd2, F] = pyulear(x(tt*fs:(tt+0.3)*fs),25,fs);
+    % [psd3, F] = pyulear(x(tt*fs:(tt+0.3)*fs),50,fs);
+    span = 6;
+    for k = 1:span
+        [psd, F] = pyulear(x(tt*fs:(tt+0.3)*fs),100,fs);
+%         subplot(span,1,k) %for psd
+%         plot(F/pi*fs/2, psd)  %for psd
+%         axis([0 1000 0 1.25*max(psd)])    %for psd
+        tt = tt + 0.15;
+
+        %peak & BW
+        pos = find(psd == max(psd));%index of peak in psd matrix
+        peak(ctr,1) = F(pos);%freq of peak
+        low=0;
+        high=0;
+        tmp = pos;
+        while psd(tmp)>0.05*psd(pos)
+            tmp = tmp-1;
+        end
+        low = F(tmp);
+        tmp = pos;
+        while psd(tmp)>0.05*psd(pos)
+            tmp = tmp+1;
+        end
+        high = F(tmp);
+        peak(ctr,2) = high-low;
+        ctr = ctr+1;
+    end
+    plot(peak(:,1), peak(:,2),'r.','MarkerSize',14); %for distribution
+    xlabel('Frequency (Hz)')
+end
+peak = peak/pi*fs/2;
+%psd(h,x,'Fs',fs);                    % Calculate and plot the one-sided psd.
+%hpsd = psd(h,x,'ConfLevel',.98);     % psd with confidence level
+%figure,plot(hpsd)
 
 %cpm
 % figure
