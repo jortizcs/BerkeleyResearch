@@ -270,8 +270,113 @@ hit_rate=same_cnt/length(IDX)
 
 
 
+%% Full analysis
+addpath('/Users/jortiz/Dropbox/dissertation/BerkeleyResearch/TypeAnalysis/matlab')
+
+% IMF bands
+LF_IMF = 4;
+MF_IMF = 3;
+HF_IMF = 2;
+RAW_IMF = 1;
+RES = 5;
+IMF_band = RES; 
 
 
+sz = 10000;
+base = '~/StreamFS/StreamFS.classifier/data/KETI/';
+cd (base);
+folders = dir(base);
+srate = 1/15; %sample rate
+w = 100;    %window for dpca
+DATA=[];
+
+% for ground truth
+PIR=1;
+CO2=2;
+TEMP=3;
+HUM=4;
+GT=[];
+
+start_=0;
+end_=0;
+
+for i=4:size(folders,1)-1
+    fname= folders(i).name;
+    files = dir(strcat(base,fname));
+    thisdir = strcat(strcat(base, fname),'/');
+    fprintf('Processing %s.\n',thisdir);
+
+    for j=3:size(files,1)
+        fname = files(j).name;
+        
+        % record the type for ground truth
+        start_ = end_+1;
+        end_ = start_-1+(sz/w);
+        type='';
+        if ~isempty(strfind(fname, 'co2'))
+            GT=[GT; CO2, start_, end_];
+            type='CO2';
+        elseif ~isempty(strfind(fname, 'humidity'))
+            GT=[GT; HUM, start_, end_];
+            type='HUM';
+        elseif ~isempty(strfind(fname, 'light'))
+            GT=[GT; PIR, start_, end_];
+            type='PIR';
+        elseif ~isempty(strfind(fname, 'temperature'))
+            GT=[GT; TEMP, start_, end_];
+            type='TEMP';
+        end
+        fprintf('\tGround Truth  [%s %d %d]\n',type,start_, end_);
+        
+        fprintf('\tOpening: %s, %d entries\n', strcat(thisdir, fname), sz);
+        fid=fopen(strcat(thisdir, fname));
+        vec = fscanf(fid,'%f',[sz,1]);
+        fclose(fid);
+        
+        % EMD dis-aggregation
+        fprintf('\tEMD Running\n');
+        [IMFS, REAGG] = StripAgg(vec,srate);
+        
+        
+        % separate it out into segments of size w
+        fprintf('\tPartitioning, window=%d\n',w);
+        SIG =[];
+        for k=0: (size(REAGG',1)/w)-1
+            start_w = k*w+1;
+            end_w = start_w+w-1;
+            SIG=[SIG; REAGG(IMF_band,start_w:end_w)];
+        end
+        DATA=[DATA; SIG];
+        fprintf('\tsize(DATA)=[%d %d]\n\n', size(DATA,1), size(DATA,2));
+    end
+    %fprintf('\n');
+end
+
+%%
+% PCA
+[wcoeff,score,latent,tsquared,explained] = pca(DATA, 'VariableWeights','variance');
+
+
+%%
+% Plot
+for i=1:size(GT,1)
+    start_ = GT(i,2);
+    end_ = GT(i,3);
+    if GT(i,1)==PIR
+        plot3(score(start_:end_,1), score(start_:end_,2), score(start_:end_,3), 'bo');
+    elseif GT(i,1)==CO2
+        plot3(score(start_:end_,1), score(start_:end_,2), score(start_:end_,3), 'g*');
+    elseif GT(i,1)==TEMP
+        plot3(score(start_:end_,1), score(start_:end_,2), score(start_:end_,3), 'rx');
+    elseif GT(i,1)==HUM
+        plot3(score(start_:end_,1), score(start_:end_,2), score(start_:end_,3), 'cx');
+    end
+    hold on;
+end
+hold off;
+
+%%
+IDX= kmeans(score(:,1),4);
 
 
 
