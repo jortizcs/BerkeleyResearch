@@ -291,9 +291,9 @@ w = 100;    %window for dpca
 DATA=[];
 
 % for ground truth
-PIR=1;
-CO2=2;
-TEMP=3;
+PIR=3;
+CO2=1;
+TEMP=2;
 HUM=4;
 GT=[];
 
@@ -352,9 +352,42 @@ for i=4:size(folders,1)-1
     %fprintf('\n');
 end
 
+fprintf('Done\n\n\n');
+
 %%
 % PCA
 [wcoeff,score,latent,tsquared,explained] = pca(DATA, 'VariableWeights','variance');
+
+
+%%
+score2 = zeros(size(score,1), 3);
+for i=1:length(score2)
+    score2(i,1)=score(i,1);
+    score2(i,2)=score(i,2);
+    score2(i,3)=score(i,1)^2 + score(i,2)^2;
+end
+%IDX= kmeans(score(:,1),4);
+%IDX= kmeans(score2,4);
+
+figure;
+for i=1:size(GT,1)
+    start_ = GT(i,2);
+    end_ = GT(i,3);
+    if GT(i,1)==PIR
+        plot3(score2(start_:end_,1), score2(start_:end_,2), score2(start_:end_,3), 'bo');
+    elseif GT(i,1)==CO2
+        plot3(score2(start_:end_,1), score2(start_:end_,2), score2(start_:end_,3), 'g*');
+    elseif GT(i,1)==TEMP
+        plot3(score2(start_:end_,1), score2(start_:end_,2), score2(start_:end_,3), 'rx');
+    elseif GT(i,1)==HUM
+        plot3(score2(start_:end_,1), score2(start_:end_,2), score2(start_:end_,3), 'cx');
+    end
+    hold on;
+end
+hold off;
+
+grid on;
+
 
 
 %%
@@ -375,14 +408,77 @@ for i=1:size(GT,1)
 end
 hold off;
 
+
+
+
+%%  EVALUATION
+NGT=zeros(GT(size(GT,1),3),1);
+for i=1:size(GT,1)
+    for j=GT(i,2):GT(i,3)
+        NGT(j,1)=GT(i,1);
+    end
+end
+
+% Eval success
+mid = floor(size(DATA,1)/2);
+len = length(DATA);
+mdl = ClassificationKNN.fit(DATA(1:mid,1:3),NGT(1:mid));
+
+cnt=0;
+for i=mid+1:len
+   if predict(mdl,DATA(i,1:3))==NGT(i)
+       cnt=cnt+1;
+   end
+end
+
+cnt/(len-mid)
+
+% COMP = [NGT, IDX];
+% 
+% length(IDX(find(IDX(:,1)~=NGT(:,1))))/length(IDX)
+
+% RES=58.8%
+% RAW = 70.84% w/o energy & 76.5 w/energy%
+
 %%
-IDX= kmeans(score(:,1),4);
+total=[];
+for j=1:4 %classes (labled)
+    r = find(GT(:,1)==j);
+    SUBGT = [GT(r,2), GT(r,3)];
+    SUBIDX = [];
+    for b=1:size(SUBGT,1)
+        SUBIDX=[SUBIDX; IDX(SUBGT(b,1):SUBGT(b,1))];
+    end
+    
+    per1 = length(find(SUBIDX(:,1)==1))/length(SUBIDX);
+    per2 = length(find(SUBIDX(:,1)==2))/length(SUBIDX);
+    per3 = length(find(SUBIDX(:,1)==3))/length(SUBIDX);
+    per4 = length(find(SUBIDX(:,1)==4))/length(SUBIDX);
+    if j==PIR
+        t='PIR';
+    elseif j==CO2
+        t='CO2';
+    elseif j==TEMP
+        t='TEMP';
+    elseif j==HUM
+        t='HUM';
+    end
+    fprintf('[%s %f %f %f %f]\n', t, per1, per2, per3,per4);
+end
+
+%%
+G1=length(find(GT(:,1)==1));
+G2=length(find(GT(:,1)==2));
+G3=length(find(GT(:,1)==3));
+G4=length(find(GT(:,1)==4));
+fprintf('[GT %d %d %d %d]\n',G1,G2,G3,G4); 
 
 
-
-
-
-
+I1=length(find(IDX(:,1)==1));
+I2=length(find(IDX(:,1)==2));
+I3=length(find(IDX(:,1)==3));
+I4=length(find(IDX(:,1)==4));
+fprintf('[IDX %d %d %d %d]\n',G1,G2,G3,G4);
 
 
 
