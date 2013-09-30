@@ -93,7 +93,22 @@ end
 hold off;
 
 
+%%
 
+for i=1:length(DATA)
+    if ismember(GT{i,1},'ART')
+        color='bx';
+    elseif ismember(GT{i,1},'OAT')
+        color ='gx';
+    elseif ismember(GT{i,1},'RVAV')
+        color='co';
+    elseif ismember(GT{i,1},'VAV')
+        color='ro';
+    end
+
+    plot3(DATA(i,1), DATA(i,2), DATA(i,3), color);
+    hold on;
+end
 
 
 
