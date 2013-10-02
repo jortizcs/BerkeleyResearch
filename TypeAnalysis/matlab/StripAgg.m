@@ -19,7 +19,7 @@ function [ IMF, REAGG ] = StripAgg( s, sampling_rate )
     end
 
     for i=1:size(IMF,1)
-        avgT = ZCR(IMF(i,:))*sampling_rate;
+        avgT = ZCR(IMF(i,:))/2*sampling_rate;
         if avgT>HF_MAX
             HAGG = HAGG + IMF(i,:);
         elseif avgT<=HF_MAX && avgT>MF_MAX
