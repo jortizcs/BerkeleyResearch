@@ -60,8 +60,23 @@ classdef TypeHierarchy < handle
                 return;
             end
             
+            if sum(ismember(obj.tags, node_name))==1
+                node_name_id = find(ismember(obj.tags, node_name)==1);
+                id = unique(obj.rmap(find(obj.rmap(:,2)==node_name_id),1));
+                parent = obj.tags{id(1,1),1};
+            end
             
+        end
+        
+        function children = getChildren(parent)
+            children = -1;
+            if ischar(parent)==0
+                return;
+            end
             
+            parent_id = find(ismember(obj.tags, parent)==1);
+            children_ids = obj.rmap(find(obj.ramp(:,1)==parent_id),2);
+            children = obj.tags{children_ids};
         end
         
         function [ok]=printHierarchy()
