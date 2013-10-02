@@ -1,0 +1,4 @@
+for file in *.DAT
+do
+    mv "$file" "${file/$/_}"
+done
