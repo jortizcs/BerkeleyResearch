@@ -3,12 +3,15 @@ classdef TypeHierarchy < handle
     %   Detailed explanation goes here
     
     properties
-        tags=cell{0,0};
+        tags=cell(0,0);
         rmap=zeros(0,0);
     end
     
     methods
         function [obj] = TypeHierarchy()
+            obj.tags={'root'};
+            obj.rmap=[1,0];
+            return;
         end
         
         function [ok]=addNode(obj,parent, node_name)
@@ -32,7 +35,7 @@ classdef TypeHierarchy < handle
             elseif sum(ismember(obj.tags, parent))==1 && sum(ismember(obj.tags, node_name))==0
                 parent_id = find(ismember(obj.tags, parent)==1);
                 obj.tags{length(obj.tags)+1,1} = node_name;
-                node_name_id = length(obj.tags)+1;
+                node_name_id = length(obj.tags);
 
                 obj.rmap = [obj.rmap; parent_id, node_name_id];
                 ok=1;
@@ -40,21 +43,22 @@ classdef TypeHierarchy < handle
             end
         end
         
-        function [ok]=removeNode(node_name)
+        function [ok]=removeNode(obj,node_name)
             ok=0;
-            if ischar(node_name)==0
+            if ischar(node_name)==0 || strcmp(node_name,'root')==1
                 return;
             end
             
             if sum(ismember(obj.tags, node_name))==1
-                node_id = find(ismember(obj.tags, node_name)==1);
-                rmap[find(rmap(:,1)==node_id || rmap(:,2)==node_id),:]=[];
-                obj.tags(node_id,:)=[];
-            end
+                node_id = find(ismember(obj.tags, node_name)==1)
+                obj.rmap(find(obj.rmap(:,1)==node_id | obj.rmap(:,2)==node_id),:)=[];
                 
+                %don't remove the tag
+                %obj.tags{node_id,1}='';
+            end     
         end
         
-        function [parent] = getParent(node_name)
+        function [parent] = getParent(obj,node_name)
             parent =-1;
             if ischar(node_name)==0
                 return;
@@ -63,7 +67,9 @@ classdef TypeHierarchy < handle
             if sum(ismember(obj.tags, node_name))==1
                 node_name_id = find(ismember(obj.tags, node_name)==1);
                 id = unique(obj.rmap(find(obj.rmap(:,2)==node_name_id),1));
-                parent = obj.tags{id(1,1),1};
+                if ~isempty(id)
+                    parent = obj.tags{id(1,1),1};
+                end
             end
             
         end
