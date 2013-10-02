@@ -14,6 +14,18 @@ classdef TypeHierarchy < handle
             return;
         end
         
+        function [ok] = addAll(obj,parent, node_names)
+            ok=0;
+            if ischar(parent)==0
+                return;
+            end
+            
+            for i=1:length(node_names)
+                obj.addNode(parent, node_names{i});
+            end
+            ok=1;
+        end
+        
         function [ok]=addNode(obj,parent, node_name)
             ok=0;
             

@@ -467,8 +467,26 @@ else
 end
 
 
+%%
+clear tp;
+tp = TypeHierarchy();
+b={'F' 'psi' 'KW' 'lbs' 'alarm' 'boolean' 'position'};
+F={'MAX_OAT' 'OAT' 'ORH' 'SLCT_PID' 'ART' 'ARS' 'ASO' 'AGN' 'VR' 'MAT' 'SAS' 'SAT' 'RM_SAS' 'RAT' 'SWS' 'SWT' 'CDRWT' 'BLD_1_OAT' 'BLD___ORH'};
+lbs = {'SFM' 'HPSTM'};
+psi={'HPS' 'VAV__AVG' 'VAV__MIN' 'VAV__MAX' 'VAV' 'RVAV' 'CVP' 'CLV' 'DMP' 'HVP'};
+KW={'KWD' 'KWH' 'SKWH' 'KW' 'BLD_1SKWH' 'BLD_1_KWH' 'BLD_1_KWD' 'BLD_2SKWH' 'BLD_2_KWH' 'BLD_2_KWD'};
+alarm={'PRALM' 'LOW_RAT' 'LOW_RAT1' 'LOW_RAT2' 'LOW_RAT3' 'LOW_RAT4' 'SMK_ALM' 'SMK_ALM1' 'SMK_ALM2' 'SMK_ALM3' 'SMK_ALM4' 'FLT'};
+boolean={'BLD_EVENT' 'BLD___HPS' 'BLD_CURTL' 'BLD_STMON' 'BLD_PRALM'};
+position={'VLV' 'A_M' 'L_L'};
 
-
+tp.addAll('root',b);
+tp.addAll('F',F);
+tp.addAll('lbs', lbs);
+tp.addAll('psi',psi);
+tp.addAll('KW',KW);
+tp.addAll('alarm', alarm);
+tp.addAll('boolean', boolean);
+tp.addAll('position',position);
 
 
 

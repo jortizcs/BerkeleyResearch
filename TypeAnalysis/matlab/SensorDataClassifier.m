@@ -18,6 +18,7 @@ classdef SensorDataClassifier < handle
         
         IMF_bands = ['Hi','Med','Low','Res','Raw'];
         
+        tp=0;
         
     end
     
@@ -26,6 +27,26 @@ classdef SensorDataClassifier < handle
 
             addpath('/Users/jortiz/Dropbox/dissertation/BerkeleyResearch/TypeAnalysis/matlab');
             addpath('/Users/jortiz/Dropbox/dissertation/BerkeleyResearch/TypeAnalysis/matlab/acf');
+            
+            % for hierarchical clustering, this sets up the label hiearchy
+            obj.tp = TypeHierarchy();
+            b={'F' 'psi' 'KW' 'lbs' 'alarm' 'boolean' 'position'};
+            F={'MAX_OAT' 'OAT' 'ORH' 'SLCT_PID' 'ART' 'ARS' 'ASO' 'AGN' 'VR' 'MAT' 'SAS' 'SAT' 'RM_SAS' 'RAT' 'SWS' 'SWT' 'CDRWT' 'BLD_1_OAT' 'BLD___ORH'};
+            lbs = {'SFM' 'HPSTM'};
+            psi={'HPS' 'VAV__AVG' 'VAV__MIN' 'VAV__MAX' 'VAV' 'RVAV' 'CVP' 'CLV' 'DMP' 'HVP'};
+            KW={'KWD' 'KWH' 'SKWH' 'KW' 'BLD_1SKWH' 'BLD_1_KWH' 'BLD_1_KWD' 'BLD_2SKWH' 'BLD_2_KWH' 'BLD_2_KWD'};
+            alarm={'PRALM' 'LOW_RAT' 'LOW_RAT1' 'LOW_RAT2' 'LOW_RAT3' 'LOW_RAT4' 'SMK_ALM' 'SMK_ALM1' 'SMK_ALM2' 'SMK_ALM3' 'SMK_ALM4' 'FLT'};
+            boolean={'BLD_EVENT' 'BLD___HPS' 'BLD_CURTL' 'BLD_STMON' 'BLD_PRALM'};
+            position={'VLV' 'A_M' 'L_L'};
+
+            obj.tp.addAll('root',b);
+            obj.tp.addAll('F',F);
+            obj.tp.addAll('lbs', lbs);
+            obj.tp.addAll('psi',psi);
+            obj.tp.addAll('KW',KW);
+            obj.tp.addAll('alarm', alarm);
+            obj.tp.addAll('boolean', boolean);
+            obj.tp.addAll('position',position);
 
             %type setting
             if type==obj.NONE
