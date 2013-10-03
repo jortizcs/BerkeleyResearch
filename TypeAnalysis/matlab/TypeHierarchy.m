@@ -97,8 +97,48 @@ classdef TypeHierarchy < handle
             children = obj.tags{children_ids};
         end
         
-        function [ok]=printHierarchy()
+        function [ok] = isparent(obj,name)
+            ok=0;
+            id = find(ismember(obj.tags, name));
+            if ~isempty(id) && ~isempty(find(obj.rmap(:,1)==id))
+                ok=1;
+            end
         end
+        
+        function [ok] = ischild(obj,name)
+            %fprintf('%s is child?\n',name);
+            ok=0;
+            id = find(ismember(obj.tags, name));
+            if ~isempty(id) && ~isempty(find(obj.rmap(:,2)==id))
+                ok=1;
+            end
+        end
+        
+        function [parent, child]=getCategory(obj, name)
+            parent=-1;
+            child=-1;
+            for i=1:length(obj.tags)
+                if ~isempty(strfind(name, obj.tags{i}))
+                    match_str = obj.getParent(obj.tags{i});
+                    if ischar(match_str)==1
+                       if obj.isparent(match_str)
+                           parent=match_str;
+                           child = obj.tags{i};
+                       else obj.ischild(match_str)
+                           child=match_str;
+                           parent= obj.getParent(child);
+                       end
+                    end
+                else
+                    fprintf('\tTypeHierachy: Could not find %s in %s\n', obj.tags{i}, name);
+                end
+            end
+        end
+        
+        
+        
+        
+        
     end
     
 end
