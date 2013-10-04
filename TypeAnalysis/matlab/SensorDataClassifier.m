@@ -98,6 +98,139 @@ classdef SensorDataClassifier < handle
             end
         end
         
+        function [accuracy] = assessSoda4(obj)
+            [DATA, GT]=DynDataSodaEnergy(obj)
+            
+            
+            if ~isempty(DATA) && ~isempty(GT)
+                mid = floor(size(DATA,1)/2);
+                len = length(DATA);
+                size(DATA);
+                mdl = ClassificationKNN.fit(DATA(1:mid,:),GT(1:mid));
+                
+                cnt=0;
+                for i=mid+1:len
+                   if strcmp(predict(mdl,DATA(i,:)),GT(i))==1
+                       cnt=cnt+1;
+                   end
+                end
+
+                accuracy=cnt/(len-mid);
+                clusters = GT;
+                fprintf('\n\nBefore PCA:  accuracy=%f\n',accuracy);
+                
+                fprintf('Trying w/PCA...');
+                % try with PCA
+                [wcoeff,score,latent,tsquared,explained] = pca(DATA, 'VariableWeights','variance');
+                top_k = 1;
+                while sum(explained(1,1:top_k))<0.95
+                    top_k=top_k+1;
+                end
+                mdl2 = ClassificationKNN.fit(score(1:mid, 1:top_k), GT(1:mid));
+                cnt=0;
+                for i=mid+1:len
+                   if strcmp(predict(mdl2,score(i,1:top_k)),GT(i))==1
+                       cnt=cnt+1;
+                   end
+                end
+
+                pca_acc=cnt/(len-mid);
+                fprintf('After PCA:  accuracy=%f\n',pca_acc);
+
+            end
+            fprintf('\n\n');
+        end
+        
+        
+        function [accuracy] = assessSoda3(obj, iband)
+            imfband=5;
+            for i=1:length(obj.IMF_bands)
+                if strcmpi(obj.IMF_bands(i),iband)==1
+                    imfband=i;
+                    break;
+                end
+            end
+            [DATA, GT]=obj.DynDataSoda_Level1(1, imfband);
+            if ~isempty(DATA) && ~isempty(GT)
+                mid = floor(size(DATA,1)/2);
+                len = length(DATA);
+                size(DATA);
+                mdl = ClassificationKNN.fit(DATA(1:mid,:),GT(1:mid));
+                
+                cnt=0;
+                for i=mid+1:len
+                   if strcmp(predict(mdl,DATA(i,:)),GT(i))==1
+                       cnt=cnt+1;
+                   end
+                end
+
+                accuracy=cnt/(len-mid);
+                clusters = GT;
+                fprintf('\n\nBefore PCA:  accuracy=%f\n',accuracy);
+                
+                fprintf('Trying w/PCA...');
+                % try with PCA
+                [wcoeff,score,latent,tsquared,explained] = pca(DATA, 'VariableWeights','variance');
+                top_k = 1;
+                while sum(explained(1,1:top_k))<0.95
+                    top_k=top_k+1;
+                end
+                mdl2 = ClassificationKNN.fit(score(1:mid, 1:top_k), GT(1:mid));
+                cnt=0;
+                for i=mid+1:len
+                   if strcmp(predict(mdl2,score(i,1:top_k)),GT(i))==1
+                       cnt=cnt+1;
+                   end
+                end
+
+                pca_acc=cnt/(len-mid);
+                fprintf('After PCA:  accuracy=%f\n',pca_acc);
+
+            end
+            fprintf('\n\n');
+        end
+        
+        function [accuracy] = assessSoda2(obj)
+            [DATA, GT]=obj.HistDataSoda_Level1();
+            if ~isempty(DATA) && ~isempty(GT)
+                mid = floor(size(DATA,1)/2);
+                len = length(DATA);
+                size(DATA);
+                mdl = ClassificationKNN.fit(DATA(1:mid,:),GT(1:mid));
+                
+                cnt=0;
+                for i=mid+1:len
+                   if strcmp(predict(mdl,DATA(i,:)),GT(i))==1
+                       cnt=cnt+1;
+                   end
+                end
+
+                accuracy=cnt/(len-mid);
+                clusters = GT;
+                fprintf('\n\nBefore PCA:  accuracy=%f\n',accuracy);
+                
+                fprintf('Trying w/PCA...');
+                % try with PCA
+                [wcoeff,score,latent,tsquared,explained] = pca(DATA, 'VariableWeights','variance');
+                top_k = 1;
+                while sum(explained(1,1:top_k))<0.95
+                    top_k=top_k+1;
+                end
+                mdl2 = ClassificationKNN.fit(score(1:mid, 1:top_k), GT(1:mid));
+                cnt=0;
+                for i=mid+1:len
+                   if strcmp(predict(mdl2,score(i,1:top_k)),GT(i))==1
+                       cnt=cnt+1;
+                   end
+                end
+
+                pca_acc=cnt/(len-mid);
+                fprintf('After PCA:  accuracy=%f\n',pca_acc);
+
+            end
+            fprintf('\n\n');
+        end
+        
         % Assess the Soda Hall traces
         % atype is one of the following ['Hist', 'Dpca', 'Raw']
         function [accuracy, pca_acc, clusters] = assessSoda(obj,dict,atype,iband)
@@ -503,6 +636,439 @@ classdef SensorDataClassifier < handle
             end
             
             
+        end
+        
+        function [DATA, GT]=DynDataSoda_Level1(obj, run_emd, imfband)
+            
+            base = obj.rootdir;
+            cd (base);
+            sz=5000;
+            folders = dir(base);
+            w = 100;    %window for dpca
+            DATA=[];
+            total_pts = 0;
+            
+            %dict = obj.tp.getChildren('root');
+            dict = {'F', 'psi'};
+
+            % number of learning examples per type
+            lex=3;
+            dpts_per_ex = sz;
+            tally = {};
+            
+            %ground truth
+            GT={};
+            idx =1;
+
+            % bins
+            bins=10;
+
+            % figure;
+            for i=4:size(folders,1)-1
+                fname= folders(i).name;
+                thisdir = strcat(strcat(base, fname));
+                if isdir(thisdir)        
+                    system(strcat(['cp' ' ' obj.renameAll ' ' thisdir]));
+                    cd(thisdir);
+                    system('source rnall2');
+                    fprintf('Processing %s\n',thisdir);
+
+                    % figure out the type
+                    % figure out the type
+                    [type, subtype] = obj.tp.getCategory(fname);
+                    
+                    if type==-1
+                        type='NONE';
+                    end
+                    fprintf ('\ttype=%s\n', type);
+
+                    % start parsing
+                    files = dir(strcat(strcat(base,fname),'/'));
+                    for j=3:size(files,1)
+                        offset = 0;
+                        len = sz;
+                        if ~isempty(strfind(files(j,1).name,'M.DAT')) && strcmp(type,'NONE')==0
+
+                            fprintf('\tProcessing: %s\n', files(j,1).name);
+                            fname = strcat(strcat(thisdir,'/'),files(j,1).name);
+                            [stat, res] = system(strcat(['wc -l' ' ' fname]));
+                            tok = strtok(res);
+                            tlines = str2num(tok);
+                            offset = tlines-offset;
+                            artcmd = strcat(['~/bin/ack ''(\d+),\t.*,\t(\d+\.\d+)$''' ' ' fname ' ' '--output=''$1,$2'' | tail -n ' num2str(offset) ' ' '|head -n' ' ' num2str(len) ' >testres.csv']);
+
+                            [stat, res]=system(artcmd);
+                            artcmd2 = strcat(['~/bin/ack ''(\\d+),\\t.*,\\t(\\d+\\.\\d+)$''' ' ' fname ' ' '--output=''$1,$2'' | tail -n ' num2str(offset) ' ' '|head -n' ' ' num2str(len) ' >testres.csv']);
+                            %fprintf(strcat (['artcmd=' artcmd2 '\n']));
+                            data = importdata('testres.csv');
+                            system('rm -f testres.csv rnall2');
+
+                            % bin and populate
+                            if ~isempty(data)
+                                
+                                %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+                                % keep track of number learning examples%%%
+                                do_not_include =0;
+                                thisid =0;
+                                for id=1:size(tally,1)
+                                    if strcmpi(tally{id,1},type)==1
+                                        thisid=id;
+                                    end
+                                end
+
+                                if thisid==0
+                                    newid=size(tally,1)+1;
+                                    tally{newid,1}=type;
+                                    tally{newid,2}=length(data);
+                                else
+                                    if tally{thisid,2}>dpts_per_ex*lex
+                                        do_not_include = 1;
+                                    else
+                                        tally{thisid,2}=tally{thisid,2}+length(data);
+                                    end
+                                end
+                                tally
+                                if size(tally,1)==length(dict) && total_pts>=length(dict)*dpts_per_ex*lex
+                                    fprintf('Done learning\n');
+                                    return;
+                                end
+                                %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+                                %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+                                
+                                % include and analyze it only if not seen
+                                % before
+                                if do_not_include==0
+                                    total_pts = total_pts + length(data);
+                                    if run_emd==1
+                                        fprintf('\tRunning EMD on %s...\n',files(j,1).name);
+
+                                        %removing deplicates
+                                        fprintf('\t\tDataLength=%d\n', size(data,1));
+                                        newv=min(data(:,1)):15:max(data(:,1));
+                                        u=unique(data(:,1));
+                                        n=histc(data(:,1),u);
+                                        remove_set = find(n>1);
+                                        while ~isempty(remove_set)
+                                            data(remove_set,:)=[];
+                                            fprintf('\t\tDataLength=%d', size(data,1));
+                                            newv=min(data(:,1)):15:max(data(:,1));
+                                            u=unique(data(:,1));
+                                            n=histc(data(:,1),u);
+                                            remove_set = find(n>1);
+                                        end
+                                        
+                                        %plot before-after
+%                                         t_min = min(data(:,1));
+%                                         t_max = max(data(:,1));
+%                                         figure;
+%                                         subplot(2,1,1);
+%                                         scatter(data(:,1), data(:,2));
+%                                         xlim([t_min,t_max]);
+                                        
+                                        % resample the underlying data
+                                        data = interp1(data(:,1),data(:,2),newv', 'spline');
+%                                         subplot(2,1,2);
+%                                         scatter(newv', data(:,1));
+%                                         xlim([t_min,t_max]);
+                                        
+
+                                        % emd shit
+                                        [IMFS, REAGG_IMFS] = StripAgg(data,1/15);
+                                        data = REAGG_IMFS(imfband,:);
+                                        fprintf('\t...done\n');
+                                    end
+
+                                    chunks = floor(length(data)/w);
+                                    fprintf('\t\tData not empty, chunks=%d\n', chunks);
+
+%                                     ac=acf(data(:,2), floor(length(data(:,2))/2));
+%                                     min_w=find(abs(ac(:,1))==min(abs(ac(:,1))));
+
+                                    for i=1:chunks
+                                        %size(data);
+                                        DATA=[DATA; data(1,1:w)];
+                                        GT{idx,1}=type;
+                                        idx = idx +1;
+                                        data = data(1,w+1:length(data));
+                                    end
+%                                     fprintf('\t\t\tfile=%s, type=%s, vector=[%d %d %d ...], %d pts, minAC_win=%d\n', ...
+%                                             files(j,1).name, type, data(1,1), data(1,2), data(1,3), size(data,2), min_w);
+                                end
+                                
+                            end
+%                         else
+%                             fprintf('\tInvalid: %s\n', files(j,1).name);
+                        end
+                    end
+                end
+
+
+            end
+            
+            
+        end
+        
+        function [DATA, GT]=DynDataSodaEnergy(obj)
+            
+            base = obj.rootdir;
+            cd (base);
+            sz=5000;
+            folders = dir(base);
+            w = 100;    %window for dpca
+            DATA=[];
+            total_pts = 0;
+
+            
+            %ground truth
+            GT={};
+            idx =1;
+
+            % bins
+            bins=10;
+            
+            dict = {'ART', 'OAT', 'RVAV', 'VAV'};
+            ARTCNT=0;
+            OATCNT=0;
+            RVAVCNT=0;
+            VAVCNT=0;
+
+            % figure;
+            for i=4:size(folders,1)-1
+                fname= folders(i).name;
+                thisdir = strcat(strcat(base, fname));
+                if isdir(thisdir)        
+                    system(strcat(['cp' ' ' obj.renameAll ' ' thisdir]));
+                    cd(thisdir);
+                    system('source rnall2');
+                    fprintf('Processing %s\n',thisdir);
+
+                    % figure out the type
+                    [type, subtype] = obj.tp.getCategory(fname);
+                    
+                    if type==-1
+                        type='NONE';
+                    end
+                    if subtype~=-1
+                        type=subtype;
+                    end
+                    fprintf ('\ttype=%s\n', type);
+                    
+                    % start parsing
+                    files = dir(strcat(strcat(base,fname),'/'));
+                    for j=3:size(files,1)
+                        
+                        do_not_process=1;
+
+                        if ~isempty(strfind(files(j,1).name,'M.DAT'))
+
+
+                            [t,st]=obj.tp.getCategory(files(j,1).name);
+                            if strcmp(st, 'ART')==1 && ARTCNT<2
+                                ARTCNT = ARTCNT +1;
+                                do_not_process=0;
+                            elseif strcmp(st, 'OAT')==1 && OATCNT<2
+                                OATCNT = OATCNT+1;
+                                do_not_process=0;
+                            elseif strcmp(st, 'RVAV')==1 && RVAVCNT<2
+                                RVAVCNT = RVAVCNT+1;
+                                do_not_process=0;
+                            elseif strcmp(st, 'VAV')==1 && VAVCNT <2
+                                VAVCNT = VAVCNT +1;
+                                do_not_process=0;
+                            end
+
+                            s=ARTCNT+OATCNT+RVAVCNT+VAVCNT
+                            if ARTCNT+OATCNT+RVAVCNT+VAVCNT>=8
+                                fprintf ('\ndone\n');
+                                return;
+                            end
+                        end
+                        
+                        if ~do_not_process
+                            offset = 0;
+                            len = sz;
+                            if ~isempty(strfind(files(j,1).name,'M.DAT')) && strcmp(type,'NONE')==0
+
+                                fprintf('\tProcessing: %s\n', files(j,1).name);
+                                fname = strcat(strcat(thisdir,'/'),files(j,1).name);
+                                [stat, res] = system(strcat(['wc -l' ' ' fname]));
+                                tok = strtok(res);
+                                tlines = str2num(tok);
+                                offset = tlines-offset;
+                                artcmd = strcat(['~/bin/ack ''(\d+),\t.*,\t(\d+\.\d+)$''' ' ' fname ' ' '--output=''$1,$2'' | tail -n ' num2str(offset) ' ' '|head -n' ' ' num2str(len) ' >testres.csv']);
+
+                                [stat, res]=system(artcmd);
+                                artcmd2 = strcat(['~/bin/ack ''(\\d+),\\t.*,\\t(\\d+\\.\\d+)$''' ' ' fname ' ' '--output=''$1,$2'' | tail -n ' num2str(offset) ' ' '|head -n' ' ' num2str(len) ' >testres.csv']);
+                                %fprintf(strcat (['artcmd=' artcmd2 '\n']));
+                                data = importdata('testres.csv');
+                                system('rm -f testres.csv rnall2');
+
+                                % bin and populate
+                                if ~isempty(data)
+                                    total_pts = total_pts + length(data);
+                                    fprintf('\tSummarizing %s...\n',files(j,1).name);
+
+                                    %removing deplicates
+                                    fprintf('\t\tDataLength=%d\n', size(data,1));
+                                    newv=min(data(:,1)):60:max(data(:,1));
+                                    u=unique(data(:,1));
+                                    n=histc(data(:,1),u);
+                                    remove_set = find(n>1);
+                                    while ~isempty(remove_set)
+                                        data(remove_set,:)=[];
+                                        fprintf('\t\tDataLength=%d', size(data,1));
+                                        newv=min(data(:,1)):15:max(data(:,1));
+                                        u=unique(data(:,1));
+                                        n=histc(data(:,1),u);
+                                        remove_set = find(n>1);
+                                    end
+
+                                    %plot before-after
+    %                                     t_min = min(data(:,1));
+    %                                     t_max = max(data(:,1));
+    %                                     figure;
+    %                                     subplot(2,1,1);
+    %                                     scatter(data(:,1), data(:,2));
+    %                                     xlim([t_min,t_max]);
+
+                                    % resample the underlying data
+                                    data = interp1(data(:,1),data(:,2),newv', 'spline');
+    %                                     subplot(2,1,2);
+    %                                     scatter(newv', data(:,1));
+    %                                     xlim([t_min,t_max]);
+
+                                    % normalize the data
+                                    min_v = min(data(:,1));
+                                    max_v = max(data(:,1));
+                                    data = (data(:,1)-min_v)*(1/max_v);
+
+                                    % optimal window
+                                    n = length(data(:,1))
+                                    ac=acf(data(:,1), 5000); %n-l
+                                    min_w=find(abs(ac(:,1))==min(abs(ac(:,1))))
+                                    w=min_w;
+
+                                    % normalized optimal window
+                                    w_norm = min_w/5000; % min_w/n;
+
+                                    fprintf('\t...done\n');
+
+                                    chunks = floor(length(data)/w);
+                                    fprintf('\t\tData not empty, chunks=%d\n', chunks);
+
+                                    for i=1:chunks
+                                        this_row = data(1:w,1);
+                                        [N,X]=hist(this_row,bins);
+                                        X= sort(X);
+                                        E=sum(diag(this_row*this_row'));
+                                        DATA = [DATA; X(bins), X(bins-1), E, median(this_row), w_norm];
+                                        GT{idx,1}=type;
+
+                                        fprintf('\t\t[%f %f %f %f %f %s]\n', X(bins), X(bins-1), E, median(this_row), w_norm, type);
+                                        idx = idx +1;
+                                        data = data(w+1:length(data),1);
+                                    end
+
+
+                                end
+                            end
+                        end
+                    end
+                end
+
+
+            end
+            
+            
+        end
+        
+        
+        % Runs through each UCB Soda Hall trace and reduces it down to
+        % a 2-element vector where each element has the height of the
+        % first and second highest bars in the histrogram
+        % Also returns the ground truth label as follows
+        %
+        function [DATA, GT]=HistDataSoda_Level1(obj)
+            sz = 5000;
+            %base = '/Users/jortiz/Dropbox/dissertation/BerkeleyResearch/TypeAnalysis/data/';
+            base = obj.rootdir;
+            cd (base);
+            folders = dir(base);
+            w = 100;    %window for dpca
+            DATA=[];
+
+            %ground truth
+            GT={};
+            idx =1;
+
+            % bins
+            bins=10;
+
+            % figure;
+            for i=4:size(folders,1)-1
+                fname= folders(i).name;
+                thisdir = strcat(strcat(base, fname));
+                if isdir(thisdir)        
+                    system(strcat(['cp' ' ' obj.renameAll ' ' thisdir]));
+                    cd(thisdir);
+                    system('source rnall2');
+                    fprintf('Processing %s\n',thisdir);
+
+                    % figure out the type
+                    [type, subtype] = obj.tp.getCategory(fname);
+                    
+                    if type==-1
+                        type='NONE';
+                    end
+                    fprintf ('\ttype=%s\n', type);
+
+                    % start parsing
+                    files = dir(strcat(strcat(base,fname),'/'));
+                    for j=3:size(files,1)
+                        offset = 0;
+                        len = 5000;
+                        if ~isempty(strfind(files(j,1).name,'M.DAT')) && strcmp(type,'NONE')==0
+
+                            fname = strcat(strcat(thisdir,'/'),files(j,1).name);
+                            [stat, res] = system(strcat(['wc -l' ' ' fname]));
+                            tok = strtok(res);
+                            tlines = str2num(tok);
+                            offset = tlines-offset;
+                            artcmd = strcat(['~/bin/ack ''(\d+),\t.*,\t(\d+\.\d+)$''' ' ' fname ' ' '--output=''$1,$2'' | tail -n ' num2str(offset) ' ' '|head -n' ' ' num2str(len) ' >testres.csv']);
+
+                            [stat, res]=system(artcmd);
+                            artcmd2 = strcat(['~/bin/ack ''(\\d+),\\t.*,\\t(\\d+\\.\\d+)$''' ' ' fname ' ' '--output=''$1,$2'' | tail -n ' num2str(offset) ' ' '|head -n' ' ' num2str(len) ' >testres.csv']);
+                            %fprintf(strcat (['artcmd=' artcmd2 '\n']));
+                            data = importdata('testres.csv');
+                            system('rm -f testres.csv rnall2');
+
+                            % bin and populate
+                            if ~isempty(data)
+                                GT{idx,1} = type;
+                                
+                                [N,X]=hist(data(:,2),bins);
+                                X= sort(X);
+                                
+                                ac=acf(data(:,2), floor(length(data(:,2))/2));
+                                min_w=find(abs(ac(:,1))==min(abs(ac(:,1))));
+                                
+                                if ~isempty(min_w)
+                                    fprintf('\tfile=%s, type=%s, vector=[%d %d %d %d], %d pts, minAC_win=%d\n', ...
+                                            files(j,1).name, type, X(bins), X(bins-1), min_w/length(data(:,2)), ac(min_w), size(data,1), min_w);
+
+                                    DATA=[DATA; X(bins) X(bins-1) min_w/length(data(:,2)) ac(min_w)];
+                                end
+                                
+                                idx = idx+1;
+                            end
+
+                        end
+                    end
+                end
+
+
+            end
+
         end
 
         

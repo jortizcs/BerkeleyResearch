@@ -86,15 +86,19 @@ classdef TypeHierarchy < handle
             
         end
         
-        function children = getChildren(parent)
+        function [children] = getChildren(obj, parent)
             children = -1;
             if ischar(parent)==0
                 return;
             end
             
             parent_id = find(ismember(obj.tags, parent)==1);
-            children_ids = obj.rmap(find(obj.ramp(:,1)==parent_id),2);
-            children = obj.tags{children_ids};
+            children_ids = obj.rmap(find(obj.rmap(:,1)==parent_id),2);
+            children_ids(find(children_ids(:,1)==0),:)=[];
+            children=cell(length(children_ids),1);
+            for i=1:length(children_ids)
+                children{i}=obj.tags{children_ids(i,1)};
+            end
         end
         
         function [ok] = isparent(obj,name)
@@ -129,8 +133,8 @@ classdef TypeHierarchy < handle
                            parent= obj.getParent(child);
                        end
                     end
-                else
-                    fprintf('\tTypeHierachy: Could not find %s in %s\n', obj.tags{i}, name);
+                %else
+                    %fprintf('\tTypeHierachy: Could not find %s in %s\n', obj.tags{i}, name);
                 end
             end
         end

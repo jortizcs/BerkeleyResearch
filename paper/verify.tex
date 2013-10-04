@@ -1,0 +1,228 @@
+%\documentclass[10pt,conference]{IEEEtran}
+%\documentclass[9pt,conference]{sig-alternate}
+%\documentclass[9pt,conference]{sig-alternate}
+%\documentclass[10pt,print,letterpaper,nocopyrightspace]{sigplan-proc-varsize}
+\documentclass[10pt,print,letterpaper]{sigplan-proc-varsize}
+
+\usepackage{amsmath,epsfig}
+\usepackage{url}
+\usepackage{xspace}
+\usepackage{colortbl}
+\usepackage{subfigure}
+\usepackage{dsfont}
+\usepackage{boxedminipage}
+\ifx\pdfoutput\undefined
+\usepackage[hypertex]{hyperref}
+\else
+\usepackage[pdftex,hypertexnames=false]{hyperref}
+\fi
+
+\usepackage{amssymb}
+\usepackage{wasysym}
+\usepackage[left=2.54cm,top=2.54cm,right=2.54cm,bottom=2.54cm,nohead,nofoot]{geometry}
+
+
+
+\DeclareMathOperator*{\argmax}{argmax}
+%\usepackage{times}
+
+\def\ucb{$^{\dagger}$}
+\def\stanford{$^{\ddagger}$}
+\def\arch{$^{\star}$}
+
+\newcommand{\kb}{kB}
+\newcommand{\rene}{Ren{\'e}\xspace}
+\newcommand{\reneii}{Ren{\'e}2\xspace}
+\newcommand{\wec}{WeC\xspace}
+\newcommand{\mica}{Mica\xspace}
+\newcommand{\micaii}{Mica2\xspace}
+\newcommand{\micaz}{MicaZ\xspace}
+\newcommand{\micadot}{Mica2Dot\xspace}
+\newcommand{\iic}{I$^2$C\xspace}
+\newcommand{\uA}{$\mu$A\xspace}
+\newcommand{\dotmote}{Dot\xspace}
+\newcommand{\mhz}{MHz\xspace}
+\newcommand{\ghz}{GHz\xspace}
+\newcommand{\kbps}{kbps\xspace}
+\newcommand{\dsn}{DSN\xspace}
+\newcommand{\io}{I/O\xspace}
+\newcommand{\telos}{Telos\xspace}
+
+\newcommand{\T}{\mathds{T}}
+\newcommand{\XXXnote}[1]{{\bf\color{red} XXX: #1}}
+
+
+\begin{document}
+
+%\conferenceinfo{Sensys'08,} {November 5--7, 2008, Raleigh, NC, USA.}  
+%\CopyrightYear{2008} 
+%\crdata{978-1-60558-096-8/08/09} 
+
+\title{Towards Empirically-Driven Verification in Buildings}
+%\numberofauthors{1} 
+%\author{\alignauthor Stephen Dawson-Haggerty, Jorge Ortiz, Xiaofan Jiang and David Culler\\
+%\affaddr{Computer Science Division}\\
+%\affaddr{University of California, Berkeley} \\ 
+%\affaddr{Berkeley, California 94720} \\
+%\email{\{stevedh,jortiz,xjiang,culler\}@cs.berkeley.edu}
+%} 
+
+
+%\subtitle{Paper \# Insert Reg Number Here}
+
+%\title{Alternate {\ttlit ACM} SIG Proceedings Paper in LaTeX
+%Format\titlenote{(Produces the permission block, and
+%copyright information). For use with
+%SIG-ALTERNATE.CLS. Supported by ACM.}}
+%\subtitle{[Extended Abstract]
+%\titlenote{A full version of this paper is available as
+%\textit{Author's Guide to Preparing ACM SIG Proceedings Using
+%\LaTeX$2_\epsilon$\ and BibTeX} at
+%\texttt{www.acm.org/eaddress.htm}}}
+%
+% You need the command \numberofauthors to handle the 'placement
+% and alignment' of the authors beneath the title.
+%
+% For aesthetic reasons, we recommend 'three authors at a time'
+% i.e. three 'name/affiliation blocks' be placed beneath the title.
+%
+% NOTE: You are NOT restricted in how many 'rows' of
+% "name/affiliations" may appear. We just ask that you restrict
+% the number of 'columns' to three.
+%
+% Because of the available 'opening page real-estate'
+% we ask you to refrain from putting more than six authors
+% (two rows with three columns) beneath the article title.
+% More than six makes the first-page appear very cluttered indeed.
+%
+% Use the \alignauthor commands to handle the names
+% and affiliations for an 'aesthetic maximum' of six authors.
+% Add names, affiliations, addresses for
+% the seventh etc. author(s) as the argument for the
+% \additionalauthors command.
+% These 'additional authors' will be output/set for you
+% without further effort on your part as the last section in
+% the body of your article BEFORE References or any Appendices.
+
+\numberofauthors{2} %  in this sample file, there are a *total*
+% of EIGHT authors. SIX appear on the 'first-page' (for formatting
+% reasons) and the remaining two appear in the \additionalauthors section.
+%
+\author{
+% You can go ahead and credit any number of authors here,
+% e.g. one 'row of three' or two rows (consisting of one row of three
+% and a second row of one, two or three).
+%
+% The command \alignauthor (no curly braces needed) should
+% precede each author name, affiliation/snail-mail address and
+% e-mail address. Additionally, tag each line of
+% affiliation/address with \affaddr, and tag the
+% e-mail address with \email.
+%
+% 1st. author
+\alignauthor
+%Prabal Dutta\\
+%       \affaddr{Computer Science Division}\\
+%       \affaddr{Univ. of California, Berkeley}\\
+%       \affaddr{Berkeley, CA 94720}\\
+%       \email{prabal@cs.berkeley.edu}
+% 2nd. author
+%\alignauthor
+%David Culler\\
+%       \affaddr{Computer Science Division}\\
+%       \affaddr{Univ. of California, Berkeley}\\
+%       \affaddr{Berkeley, CA 94720}\\
+%       \email{culler@cs.berkeley.edu}
+% 3rd. author
+%\alignauthor
+%Scott Shenker\\
+%       \affaddr{Computer Science Division}\\
+%       \affaddr{Univ. of California, Berkeley}\\
+%       \affaddr{Berkeley, CA 94720}\\
+%       \email{shenker@cs.berkeley.edu}
+%}
+me and me\\
+       %\affaddr{Department}\\
+	\affaddr{University of California, Berkeley}\\
+       %\affaddr{Institution}\\
+       %\affaddr{City, State Zip}\\
+       \email{\{me,you\}@eecs.berkeley.edu}
+}
+
+
+\maketitle
+
+%\date{14 April 2007}
+%\maketitle
+
+\begin{abstract}
+\input{abstract}
+\end{abstract}
+
+% A category with the (minimum) three required fields
+%\category{B.0}{Hardware}{General}
+%\category{B.4}{Hardware}{Input/Output \& Data Communication}
+
+%\terms{Design, Implementation, Performance, Experimentation}
+
+%\keywords{Churn, Link, Routing, Wireless, Sensor Network, Mote}
+
+%\newpage
+
+\input{intro}
+
+\begin{itemize}
+\item Buildings are relying more and more on software 
+\item Software relies on sensors; uses metadata to contextualize the data
+\item Metadata is inputted by human, error-prone; changes over time, becomes stale.
+\item This is perhaps not very common in a single building, but huge problem at scale.
+\item automatic verification is necessary
+\item three types: categorical, spatial, functional
+\item we show how much of each we can get emprirically on the first two; prior work handles functional.
+\end{itemize}
+
+\newpage
+
+\input{related}
+
+\newpage
+
+\section{Sensor Data In Buildings}
+\subsection{Software-based Analysis and Control}
+\subsection{Model-Predictive Control}
+\subsection{Contextualizing Sensor Data}
+\subsection{Labeling Errors And Building Evolution}
+
+\newpage
+
+\section{Empirical Verification}
+\subsection{Spatial, Categorical, and Functional}
+\subsection{Challenges}
+
+\newpage
+
+% \input{section1}
+\input{results}
+
+\newpage
+
+\section{Discussion}
+\subsection{Applications}
+\subsection{Future Work}
+
+\newpage
+
+\input{conc}
+
+\vspace{+0.5mm}
+\vspace{+2mm}
+%\bibliographystyle{IEEETran}
+\bibliographystyle{sig-alternate}
+%\bibliographystyle{abbrv}
+%\scriptsize
+\bibliography{references}
+%\bibliography{references}
+
+\end{document}
+
+
