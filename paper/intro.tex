@@ -2,25 +2,44 @@
 \label{sec:intro}
 
 
-\begin{itemize}
-\item Buildings are relying more and more on software 
-\item Software relies on sensors; uses metadata to contextualize the data
-\item Metadata is inputted by human, error-prone; changes over time, becomes stale.
-\item This is perhaps not very common in a single building, but huge problem at scale.
-\item automatic verification is necessary
-\item three types: categorical, spatial, functional
-\item we show how much of each we can get emprirically on the first two; prior work handles functional.
-\end{itemize}
+% \begin{itemize}
+% \item Buildings are relying more and more on software 
+% \item Software relies on sensors; uses metadata to contextualize the data
+% \item Metadata is inputted by human, error-prone; changes over time, becomes stale.
+% \item This is perhaps not very common in a single building, but huge problem at scale.
+% \item automatic verification is necessary
+% \item three types: categorical, spatial, functional
+% \item we show how much of each we can get emprirically on the first two; prior work handles functional.
+% \end{itemize}
 
-Buildings represent some of the largest deployments of sensors on physical infrastructure.  Traditionally used
-for historical analysis and supervisory control, these sensors are being used more and more for software-based, model-driven
-control and sophisticated real-time analytics.  The notion of smart buildings consists of a dense deployment of
-sensors in systems and spaces of the building combined with sophisticated software that uses the data collected
-from the deployment to intelligently control and aggregate the information to provide greater insight into the 
-dynamics and pathologies of buildings.  Since buildings consume a large fraction of the energy produced
-in many countries around the world~\cite{}, the move towards smart buildings is accelarating~\cite{}.
+% Buildings represent some of the largest deployments of sensors on physical infrastructure.  Traditionally used
+% for historical analysis and supervisory control, these sensors are being used more and more for software-based, model-driven
+% control and sophisticated real-time analytics.  The notion of smart buildings consists of a dense deployment of
+% sensors in systems and spaces of the building combined with sophisticated software that uses the data collected
+% from the deployment to intelligently control and aggregate the information to provide greater insight into the 
+% dynamics and pathologies of buildings.  Since buildings consume a large fraction of the energy produced
+% in many countries around the world~\cite{}, the move towards smart buildings is accelarating~\cite{}.
 
-There has been lots of recent work in this area~\cite{BOSS, FIAP, smap, ucsd, bacnetip}
+% There has been lots of recent work in this area~\cite{BOSS, FIAP, smap, ucsd, bacnetip}
+
+Buildings have become a prime target for cyber-physical systems research, as they consume 40\% of
+the energy in the U.S.~\cite{EIA}, are poorly understood,
+and offer a rich sensing infrastructure.  Thousands of sensors are embedded throughout 
+the building and produce periodic physical measurements. In order to interpret the information, metadata describing 
+the placement of sensors is recorded.
+However, deployments and their metadata are configured manually.  As such, they are prone to human error.
+Moreover, over time sensors are replaced and the physical configuration of the building changes -- walls removed,
+new offices set up -- but the metadata describing the new locations are not.  This leads to analytical errors in processes 
+that rely on the metadata when interpretting sensor feeds.  For example, model-predictive control processes rely
+on the sensors in a specific room or floor~\cite{MPC}.  Because of the size and distributed nature of the deployment, 
+it is cumbersome, error-prone, and impractical to maintain accurate metadata about sensor placement over time.  An
+automatic processes is needed.
+
+Sensor metadata contains information about the sensor and its context.  It usually units of measure, 
+the room it is in, and the system it helps feed.  For example, consider the point name `SODA1R465B_ART'.
+\emphSODA1 refers to air-handling unit 1 on soda hall, \emph{R465B} says the sensor is in room 465B, and \emph{ART}
+denotes arear-room temperature.  Although not explicitly a unit of measure, the associated data is recorded in degrees
+fahrenheit.
 
 Sensor placement information is typically embedded in the name or associated metadata for each sensor in the building.
 These are used to group sensors by location.  For example, in our building data, all sensors that contain the string
@@ -39,7 +58,7 @@ The main parameter in their approach, the correlation threshold, is explored to 
 Fontugne et al.~\cite{SBS} expand the work by applying EMD to uncover functional device patterns.  They develop
 an unsupervised learning method to model normal usage patterns and apply an anomaly detection algorithm to alert when patterns
 have deviated from the norm.  The methodology used in their work divides raw signals into four separate frequency bands
-and shows the medium band to carry the most spatial information. %But, it also fails to produce an effective classifier. 
+and shows the medium band to carry the most spatial information.
 
 In this paper, we explore the threshold parameter in~\cite{IOT} more deeply, in order to move towards automatic spatial clustering, 
 to be used as a form of verification. We use EMD and the intrinsic mode function (IMF) re-aggregation methodology described in~\cite{SBS}, with some modifications, to statistically analyze the threshold parameter
