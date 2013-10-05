@@ -2,3 +2,61 @@
 \label{sec:intro}
 
 
+\begin{itemize}
+\item Buildings are relying more and more on software 
+\item Software relies on sensors; uses metadata to contextualize the data
+\item Metadata is inputted by human, error-prone; changes over time, becomes stale.
+\item This is perhaps not very common in a single building, but huge problem at scale.
+\item automatic verification is necessary
+\item three types: categorical, spatial, functional
+\item we show how much of each we can get emprirically on the first two; prior work handles functional.
+\end{itemize}
+
+Buildings represent some of the largest deployments of sensors on physical infrastructure.  Traditionally used
+for historical analysis and supervisory control, these sensors are being used more and more for software-based, model-driven
+control and sophisticated real-time analytics.  The notion of smart buildings consists of a dense deployment of
+sensors in systems and spaces of the building combined with sophisticated software that uses the data collected
+from the deployment to intelligently control and aggregate the information to provide greater insight into the 
+dynamics and pathologies of buildings.  Since buildings consume a large fraction of the energy produced
+in many countries around the world~\cite{}, the move towards smart buildings is accelarating~\cite{}.
+
+There has been lots of recent work in this area~\cite{BOSS, FIAP, smap, ucsd, bacnetip}
+
+Sensor placement information is typically embedded in the name or associated metadata for each sensor in the building.
+These are used to group sensors by location.  For example, in our building data, all sensors that contain the string
+ `410' in their name are in room 410.  Processes typically group streams in this fashion: using regular-expression matching 
+or field-matching queries on the characters in the sensor name or metadata.  If these are not updated to reflect changes
+then such group-by query results will not accurately represent true spatial relationships.  
+Fontugne et al.~\cite{IOT} observe that spatial associations can be derived empirically.  We start with this approach in our 
+work and explore, more deeply, the extent to which it can be used 
+as a verification tool for corroborating the groups constructed from character-matching queries.  We refer
+to this process as \emph{spatial verification}.
+
+Prior work~\cite{IOT} makes use of a technique called Empirical Mode Decomposition (EMD)~\cite{EMD} to statistically cluster correlated
+usage patterns.  Sensors close to each other show strong statistical correlations while sensors further apart show weaker correlations.  
+The main parameter in their approach, the correlation threshold, is explored to demonstrate how it relates to characteristic spatial patterns
+ in the sensor feeds.  However, they do not characterize the threshold as it relates to physical configuration.
+Fontugne et al.~\cite{SBS} expand the work by applying EMD to uncover functional device patterns.  They develop
+an unsupervised learning method to model normal usage patterns and apply an anomaly detection algorithm to alert when patterns
+have deviated from the norm.  The methodology used in their work divides raw signals into four separate frequency bands
+and shows the medium band to carry the most spatial information. %But, it also fails to produce an effective classifier. 
+
+In this paper, we explore the threshold parameter in~\cite{IOT} more deeply, in order to move towards automatic spatial clustering, 
+to be used as a form of verification. We use EMD and the intrinsic mode function (IMF) re-aggregation methodology described in~\cite{SBS}, with some modifications, to statistically analyze the threshold parameter
+and its relationship to spatial separation in a building.  We explore the hypothesis that \emph{a statistical boundary, analogous to a physical one,
+exists and is empirically discoverable}.
+We conduct an empirical analysis on the data collected from 15 sensors in 5 rooms over a one-month period.  Our study makes the following contributions:
+
+\begin{itemize}
+\item We corroborate the results in~\cite{IOT}, verifying the spatial correlation pattern in a very different building.
+\item We characterize the correlation coefficient (corrcoeff) distribution of sensors in the same room and different rooms and validate our existence hypothesis for this preliminary sample.
+\item We demonstrate that the statistical boundary between sensors in various rooms converges to a similar value and this value generalizes across rooms in this study.
+\item We show the tradeoff between the true and false positive rate inherent to threshold selection. We also show that our method improves the classification accuracy from 80\% to 93.3\%.
+\end{itemize}
+
+Our results are promising yet preliminary.  We are able to find a statistical separation across a small number of rooms, quite well.
+Our study, however, does not explore the extent to which the physical separation affects the results.  Certainly for rooms that
+are far apart we observe a statistical distinction using our methodology.  However, we also find that in some cases, our approach
+does not work as well.  We discuss the approach and results in the rest of the paper, followed by a short discussion and future work.
+
+
