@@ -468,6 +468,7 @@ end
 
 
 %%
+clear all;
 clear tp;
 tp = TypeHierarchy();
 b={'F' 'psi' 'KW' 'lbs' 'alarm' 'boolean' 'position'};
@@ -490,8 +491,10 @@ tp.addAll('position',position);
 
 
 
-
-
+dict = tp.getChildren('F');
+dict = dict';
+sda = SensorDataAnalyzer(0, '/Volumes/share/data/scada/UCProject_UCB_SODAHALL');
+[accuracy] = sda.assessSoda(dict)
 
 
 

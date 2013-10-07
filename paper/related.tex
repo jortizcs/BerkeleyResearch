@@ -1,5 +1,27 @@
 \section{Related Work}
 \label{sec:related}
 
-%\cite{tos2}. 
+There has been much research work on sensor stream clustering and trace analysis. Chen and Tu~\cite{DStream} investigate 
+how to cluster data streams in real-time using a density-based approach with a two-tiered framework. The first tier captures 
+the dynamics of a data stream with a density decaying technique and then maps it to a grid.  The second tier computes a grid 
+density based on how it clusters the grid. Their approach differs from ours in that they focus on decreasing algorithm 
+complexity for real-time sensor stream clustering.  We run our analysis on historical traces and use correlation analysis
+in our clustering algorithm.
 
+Kapitanova et al.~\cite{failure} describe a technique to monitor sensor operations in the home and identify sensor failures. 
+The classifier is trained on historical sensor data to obtain the relationship between sensors, assuming the number and location of 
+sensors is known.  When a failure or removal of a sensor occurs, the classifier's behavior deviates and the event is captured. Our method does not require any prior knowledge and instead tries to cluster feeds to discover their relative placement.
+
+Lu and Whitehouse~\cite{blueprints} formulate a new algorithm, particularly leveraging the semantic constraints interpreted from sensor 
+data to determine sensor locations. The algorithm identifies how many rooms are present using motion sensors and determines room position based on physical constraints. Finally, it maps each sensor into the associated room. Our efforts focus on using intrinsic patterns typically pre-existing in building system sensor feeds to uncover physical relationships.
+
+Fontugne et al.~\cite{IOT} propose a new method to decompose sensor signals with EMD.
+They extract the intrinsic usage pattern from the raw traces and show that sensors close to each other have higher intrinsic correlation. However, they do not explore the observation more deeply by answering whether there is a statistically discoverable boundary between sensor clusters in different rooms, or if there is a uniform threshold in the correlation coefficients able to be generalized to different rooms.
+
+Fontugne et al.~\cite{SBS} carry on the work and propose an unsupervised method to monitor sensor behavior in buildings. They constructed 
+a reference model out of the underlying pattens, obtained with EMD,  and use it to compare future activity against it.  They report an anomaly whenever a device deviates from the reference. This work exploits EMD as a method to detrend the signals and capture the inter-device relationships.
+
+Much work utilizes EMD on medical data~\cite{ecg}, speech analysis~\cite{speech}, image processing~\cite{ip} 
+and climate analysis~\cite{climate}. Our method adopts EMD to determine whether a discoverable statistical boundary exists in sensors traces
+from sensors in different rooms and whether such a boundary
+ can be generalized across rooms with various kinds of sensors.
