@@ -19,7 +19,7 @@ classdef SensorDataAnalyzer < handle
         IMF_bands = ['Hi','Med','Low','Res','Raw'];
         
         tp=0;
-        
+        filestats = cell(0,4);
     end
     
     methods
@@ -108,13 +108,16 @@ classdef SensorDataAnalyzer < handle
         end
         
         function [accuracy] = assessSoda(obj, dict)
-            [DATA, MVARDATA, GT, GTMVAR, stats]=obj.DynDataSoda(dict, 1, 5)
+            %[DATA, MVARDATA, GT, GTMVAR, stats]=obj.DynDataSoda(dict, 1, 5);
+            [DATA, MVARDATA, GT, GTMVAR, stats]=obj.Test_DynDataSoda(dict, 1, 5);
             
+            fprintf('Running KNN\n');
             
             if ~isempty(DATA) && ~isempty(GT)
-                mid = floor(size(DATA,1)/2);
-                len = length(DATA);
-                size(DATA);
+                mid = floor(size(DATA,1)/2)
+                len = length(DATA)
+                size(DATA)
+                size(GT)
                 mdl = ClassificationKNN.fit(DATA(1:mid,:),GT(1:mid));
                 
                 cnt=0;
@@ -241,7 +244,7 @@ classdef SensorDataAnalyzer < handle
                     fid=fopen(strcat(thisdir, fname));
                     vec = fscanf(fid,'%f',[sz,1]);
                     fclose(fid);
-
+0
                     [N,X]=hist(vec,bins);
                     X= sort(X);
                     DATA=[DATA; X(bins) X(bins-1) X(bins-2)];
@@ -434,14 +437,358 @@ classdef SensorDataAnalyzer < handle
         end
         
         
+         function [DATA, MVARDATA, GT, GTMVAR, stats]=Test_DynDataSoda(obj, dict, run_emd, imfband)
+            
+            base = obj.rootdir;
+            cd (base);
+            sz=20000;
+            folders = dir(base);
+            w = 100;    %window for dpca
+            DATA=[];
+            total_pts = 0;
+            stats = cell(0,0);
+            sidx = 1;
+            MVARDATA = []; %trace mean and std dev.
+            
+            % number of learning examples per type
+            lex=3;
+            dpts_per_ex = sz;
+            tally = {};
+            
+            %ground truth
+            GT={};
+            idx =1;
+            GTMVAR={};
+
+            % bins
+            bins=10;
+
+            % figure;
+            for i=4:size(folders,1)-1
+                fname= folders(i).name;
+                thisdir = strcat(strcat(base, fname));
+                if isdir(thisdir)        
+                    system(strcat(['cp' ' ' obj.renameAll ' ' thisdir]));
+                    cd(thisdir);
+                    system('source rnall2');
+                    fprintf('Processing %s\n',thisdir);
+
+                    % figure out the type
+                    type = '';
+                    for i=1:length(dict)
+                        if ~isempty(strfind(fname, dict{1,i})) && length(dict{1,i})>length(type)
+                            type=dict{1,i};
+                        end
+                    end
+                    
+                    if strcmp(type,'')==1
+                        type='NONE';
+                    end
+
+                    % start parsing
+                    files = dir(strcat(strcat(base,fname),'/'));
+                    for j=3:size(files,1)
+                        offset = 0;
+                        len = sz;
+                        if ~isempty(strfind(files(j,1).name,'M.DAT')) && strcmp(type,'NONE')==0
+
+                            fprintf('\tProcessing: %s\n', files(j,1).name);
+                            fname = strcat(strcat(thisdir,'/'),files(j,1).name);
+                            [stat, res] = system(strcat(['wc -l' ' ' fname]));
+                            tok = strtok(res);
+                            tlines = str2num(tok);
+                            offset = tlines-offset;
+                            artcmd = strcat(['~/bin/ack ''(\d+),\t.*,\t(\d+\.\d+)$''' ' ' fname ' ' '--output=''$1,$2'' | tail -n ' num2str(offset) ' ' '|head -n' ' ' num2str(len) ' >testres.csv']);
+
+                            [stat, res]=system(artcmd);
+                            artcmd2 = strcat(['~/bin/ack ''(\\d+),\\t.*,\\t(\\d+\\.\\d+)$''' ' ' fname ' ' '--output=''$1,$2'' | tail -n ' num2str(offset) ' ' '|head -n' ' ' num2str(len) ' >testres.csv']);
+                            %fprintf(strcat (['artcmd=' artcmd2 '\n']));
+                            data = importdata('testres.csv');
+                            system('rm -f testres.csv rnall2');
+
+                            % bin and populate
+                            if ~isempty(data)
+                                
+                                %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+                                % keep track of number learning examples%%%
+                                do_not_include =0;
+                                thisid =0;
+                                for id=1:size(tally,1)
+                                    if strcmpi(tally{id,1},type)==1
+                                        thisid=id;
+                                    end
+                                end
+
+                                if thisid==0
+                                    newid=size(tally,1)+1;
+                                    tally{newid,1}=type;
+                                    tally{newid,2}=length(data);
+                                else
+                                    if tally{thisid,2}>dpts_per_ex*lex
+                                        do_not_include = 1;
+                                    else
+                                        tally{thisid,2}=tally{thisid,2}+length(data);
+                                    end
+                                end
+                                tally
+                                if size(tally,1)==size(dict,2) && total_pts>=size(dict,2)*dpts_per_ex*lex
+                                    fprintf('Done learning\n');
+                                    return;
+                                end
+                                %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+                                %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+                                
+                                % include and analyze it only if not seen
+                                % before
+                                if do_not_include==0
+                                    total_pts = total_pts + length(data);
+                                    if run_emd==1
+                                        fprintf('\tRunning EMD on %s...\n',files(j,1).name);
+
+                                        %removing deplicates
+                                        fprintf('\t\tDataLength=%d\n', size(data,1));
+                                        newv=min(data(:,1)):60:max(data(:,1));
+                                        u=unique(data(:,1));
+                                        n=histc(data(:,1),u);
+                                        remove_set = find(n>1);
+                                        while ~isempty(remove_set)
+                                            data(remove_set,:)=[];
+                                            fprintf('\t\tDataLength=%d', size(data,1));
+                                            newv=min(data(:,1)):60:max(data(:,1));
+                                            u=unique(data(:,1));
+                                            n=histc(data(:,1),u);
+                                            remove_set = find(n>1);
+                                        end
+                                        
+                                        obj.filestats{length(obj.filestats)+1,1}=files(j,1).name;
+                                        obj.filestats{length(obj.filestats),2} = mean(data(:,2));
+                                        obj.filestats{length(obj.filestats),3} = std(data(:,2));
+                                        obj.filestats{length(obj.filestats),4} = mode(data(:,2));
+                                        
+                                        iratio = length(data);
+                                        % resample the underlying data
+                                        data = interp1(data(:,1),data(:,2),newv', 'spline');
+                                        iratio= length(data)/iratio
+                                        stats{sidx,1}=files(j,1).name;
+                                        stats{sidx,2} = {'interpolation ratio', iratio};
+                                        sidx = sidx +1;
+                                                                                
+                                        mn = mean(data(:,1))
+                                        sd = std(data(:,1))
+                                        type
+                                        MVARDATA = [MVARDATA; mn, sd];
+                                        GTMVAR{length(GTMVAR)+1,1} = type;
+
+                                        % emd shit
+                                        %[IMFS, REAGG_IMFS] = StripAgg(data,1/60);
+%                                         figure;
+%                                         subplot(2,1,1);
+%                                         plot(REAGG_IMFS(imfband,:));
+%                                         subplot(2,1,2);
+                                        f=1/60; 
+
+                                        order = 3; % order of the filter is 3
+
+                                        fnorm1 = [1/(20*60)]/(f/2); % for bandpass, here 1 and 3 are the lower and upper cutoff respectively
+                                        % [b,a] = butter(n,Wn) % n = order of the filter, wn is the normalized
+                                        % cutoff freq
+                                        [b1,a1] = butter(order,fnorm1,'high'); 
+                                        data_1 = filtfilt(b1,a1,data); % band pass filter
+                                        
+                                        fnorm2 = [1/(1440*60) 1/(20*60)]/(f/2); % for bandpass
+                                        [b2,a2] = butter(order,fnorm2);
+                                        data_2 = filtfilt(b2,a2,data); % band pass filter
+
+                                        fnorm3 = [1/(2160*60)]/(f/2); % for bandpass
+                                        [b3,a3] = butter(order,fnorm3,'low');
+                                        data_3 = filtfilt(b3,a3,data); % band pass filter
+                                        %data_4 = data - (data_1+data_2+data_3); % residual
+
+                                        %plot(data_3);
+                                        %return;
+                                        fprintf('Residual extracted\n');
+                                        
+%                                         size(REAGG_IMFS)
+%                                         imfband
+%                                         data = REAGG_IMFS(imfband,:);
+                                        data = data_3;
+                                        fprintf('\t...done\n');
+                                    end
+
+                                    chunks = floor(length(data)/w);
+                                    fprintf('\t\tData not empty, chunks=%d\n', chunks);
+
+%                                     ac=acf(data(:,2), floor(length(data(:,2))/2));
+%                                     min_w=find(abs(ac(:,1))==min(abs(ac(:,1))));
+
+                                    for i=1:chunks
+                                        %size(data);
+                                        %DATA=[DATA; data(1,1:w)];
+                                        DATA=[DATA; data(1:w)'];
+                                        GT{idx,1}=type;
+                                        idx = idx +1;
+                                        %data = data(1,w+1:length(data));
+                                        data = data(w+1:length(data));
+                                    end
+                                    size(DATA)
+
+%                                     fprintf('\t\t\tfile=%s, type=%s, vector=[%d %d %d ...], %d pts, minAC_win=%d\n', ...
+%                                             files(j,1).name, type, data(1,1), data(1,2), data(1,3), size(data,2), min_w);
+                                end
+                                
+                            end
+%                         else
+%                             fprintf('\tInvalid: %s\n', files(j,1).name);
+                        end
+                    end
+                end
+
+            end
+         end
+        
+         
+        function [base]=Test2_DynDataSoda(obj, dict)
+            
+            base = obj.rootdir;
+            cd (base);
+            sz=20000;
+            folders = dir(base);
+            
+            % number of learning examples per type
+            lex=3;
+            dpts_per_ex = sz;
+            tally = {};
+
+            % bins
+            bins=10;
+
+            % figure;
+            for i=4:size(folders,1)-1
+                fname= folders(i).name;
+                thisdir = strcat(strcat(base, fname));
+                if isdir(thisdir)        
+                    system(strcat(['cp' ' ' obj.renameAll ' ' thisdir]));
+                    cd(thisdir);
+                    system('source rnall2');
+                    fprintf('Processing %s\n',thisdir);
+
+                    % figure out the type
+                    type = '';
+                    for i=1:length(dict)
+                        if ~isempty(strfind(fname, dict{1,i})) && length(dict{1,i})>length(type)
+                            type=dict{1,i};
+                        end
+                    end
+                    
+                    if strcmp(type,'')==1
+                        type='NONE';
+                    end
+
+                    % start parsing
+                    files = dir(strcat(strcat(base,fname),'/'));
+                    for j=3:size(files,1)
+                        offset = 0;
+                        len = sz;
+                        if ~isempty(strfind(files(j,1).name,'M.DAT')) && strcmp(type,'NONE')==0
+
+                            fprintf('\tProcessing: %s\n', files(j,1).name);
+                            fname = strcat(strcat(thisdir,'/'),files(j,1).name);
+                            [stat, res] = system(strcat(['wc -l' ' ' fname]));
+                            tok = strtok(res);
+                            tlines = str2num(tok);
+                            offset = tlines-offset;
+                            artcmd = strcat(['~/bin/ack ''(\d+),\t.*,\t(\d+\.\d+)$''' ' ' fname ' ' '--output=''$1,$2'' | tail -n ' num2str(offset) ' ' '|head -n' ' ' num2str(len) ' >testres.csv']);
+
+                            [stat, res]=system(artcmd);
+                            artcmd2 = strcat(['~/bin/ack ''(\\d+),\\t.*,\\t(\\d+\\.\\d+)$''' ' ' fname ' ' '--output=''$1,$2'' | tail -n ' num2str(offset) ' ' '|head -n' ' ' num2str(len) ' >testres.csv']);
+                            %fprintf(strcat (['artcmd=' artcmd2 '\n']));
+                            data = importdata('testres.csv');
+                            system('rm -f testres.csv rnall2');
+
+                            % bin and populate
+                            if ~isempty(data)
+                                
+                                %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+                                % keep track of number learning examples%%%
+                                do_not_include =0;
+                                thisid =0;
+                                for id=1:size(tally,1)
+                                    if strcmpi(tally{id,1},type)==1
+                                        thisid=id;
+                                    end
+                                end
+
+                                if thisid==0
+                                    newid=size(tally,1)+1;
+                                    tally{newid,1}=type;
+                                    tally{newid,2}=length(data);
+                                else
+                                    if tally{thisid,2}>dpts_per_ex*lex
+                                        do_not_include = 1;
+                                    else
+                                        tally{thisid,2}=tally{thisid,2}+length(data);
+                                    end
+                                end
+                                
+                                %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+                                %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+                                
+                                % include and analyze it only if not seen
+                                % before
+
+                                %removing deplicates
+                                fprintf('\t\tDataLength=%d\n', size(data,1));
+                                newv=min(data(:,1)):60:max(data(:,1));
+                                u=unique(data(:,1));
+                                n=histc(data(:,1),u);
+                                remove_set = find(n>1);
+                                while ~isempty(remove_set)
+                                    data(remove_set,:)=[];
+                                    fprintf('\t\tDataLength=%d\n', size(data,1));
+                                    newv=min(data(:,1)):60:max(data(:,1));
+                                    u=unique(data(:,1));
+                                    n=histc(data(:,1),u);
+                                    remove_set = find(n>1);
+                                end
+
+                                mn = mean(data(:,2));
+                                sd = std(data(:,2));
+                                md = mode(data(:,2));
+                                if ~isempty(mn) && ~isempty(sd) && ~isempty(md)
+                                    obj.filestats{length(obj.filestats)+1,1}=files(j,1).name;
+                                    obj.filestats{length(obj.filestats),2} = mn;
+                                    obj.filestats{length(obj.filestats),3} = sd;
+                                    obj.filestats{length(obj.filestats),4} = md;
+
+                                    fprintf(strcat(['[' files(j,1).name ', ' num2str(mn) ', ' num2str(sd) ', ' num2str(md) ']\n']));
+                                end
+                                
+                            end
+                        end
+                    end
+
+                end
+            end
+         
+        end
+    
+    
+    
+    
+         
         
         
-        
+    
     end
-    
-    
-    
-    
+         
+         
+         
+         
+         
+         
+         
+         
+         
     
 end
 

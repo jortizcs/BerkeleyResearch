@@ -469,10 +469,12 @@ end
 
 %%
 clear all;
+%%
 clear tp;
 tp = TypeHierarchy();
 b={'F' 'psi' 'KW' 'lbs' 'alarm' 'boolean' 'position'};
 F={'MAX_OAT' 'OAT' 'ORH' 'SLCT_PID' 'ART' 'ARS' 'ASO' 'AGN' 'VR' 'MAT' 'SAS' 'SAT' 'RM_SAS' 'RAT' 'SWS' 'SWT' 'CDRWT' 'BLD_1_OAT' 'BLD___ORH'};
+%F={'MAX_OAT' 'OAT' 'ORH' 'SLCT_PID' 'ART' 'ARS' 'ASO' 'AGN' 'MAT' 'SAS' 'SAT' 'RM_SAS' 'RAT' 'SWS' 'SWT' 'CDRWT' 'BLD_1_OAT' 'BLD___ORH'};
 lbs = {'SFM' 'HPSTM'};
 psi={'HPS' 'VAV__AVG' 'VAV__MIN' 'VAV__MAX' 'VAV' 'RVAV' 'CVP' 'CLV' 'DMP' 'HVP'};
 KW={'KWD' 'KWH' 'SKWH' 'KW' 'BLD_1SKWH' 'BLD_1_KWH' 'BLD_1_KWD' 'BLD_2SKWH' 'BLD_2_KWH' 'BLD_2_KWD'};
@@ -492,9 +494,75 @@ tp.addAll('position',position);
 
 
 dict = tp.getChildren('F');
+dict = [dict; tp.getChildren('psi')];
 dict = dict';
+%%
 sda = SensorDataAnalyzer(0, '/Volumes/share/data/scada/UCProject_UCB_SODAHALL');
-[accuracy] = sda.assessSoda(dict)
+%sda = SensorDataAnalyzer(0, '/Users/jortiz/Dropbox/dissertation/BerkeleyResearch/TypeAnalysis/data/');
+%[accuracy] = sda.assessSoda(dict);
+
+
+% [DATA, MVARDATA, GT, GTMVAR, stats]=sda.Test_DynDataSoda(dict, 1, 5);
+
+[stats]=sda.Test2_DynDataSoda(dict);
+
+%%
+
+abcstats=sda.filestats;
+GT = cell(0,0);
+% F red
+% psi blue
+figure;
+% for all the types found, plot them to see how well they separate
+j=1;
+while j<length(abcstats)
+    name = abcstats{j,1};
+    mn = abcstats{j,2};
+    sd = abcstats{j,3};
+    category = 'NONE';
+    for k=1:length(dict)
+        if ~isempty(strfind(name, dict{k}))
+            category = dict{k};
+        end
+    end
+    GT{length(GT)+1} = category;
+    clr='co';
+    if strcmp(tp.getParent(category), 'F')
+        clr = 'r*';
+    elseif strcmp(tp.getParent(category), 'psi')
+        clr = 'b*';
+    end
+    scatter([mn],[sd], clr);
+    %text(mn, sd, category);
+    hold on;
+    j = j+1;
+    
+    if mod(j,1000)==0
+        j
+    end
+end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

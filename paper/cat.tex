@@ -1,0 +1,23 @@
+% cat.tex
+
+\subsection{Problem description}
+Among the kind of missing information about a trace can be its categorical association with the S.I. units of measure
+and the context in which that sensor was placed.  Again, using the building as a case study, we see that part of the 
+naming convention incorporated into the stream tag is the type of sensor and its placement.  Area Room Temperature (ART)
+in a stream tag implies both the use of Farenheit to measure temperature and that it is placed inside a zone area,
+typically occupied by people.  Similar sensors are placed in different locations in the building, such as outside of it
+on the roof, inside vents, and inside pipes, measuring the temperature of the water running through it.  In fact, our
+one-year trace contains X temperature sensors in 19 different contexts.
+
+There is a challenge in separating these based on raw readings.  The ranges overlap significantly.
+
+These show significant similarity in the raw trace for temperature traces regardless of context.
+\begin{itemize}
+\item range overlap
+\item KL distance
+\end{itemize}
+
+Therefore, the goal is to pick out features that allow us to differentiate between them.  What aspect of the distribution is unique?
+Can we pull out certain frequency bands that are particularly informative and representative with respect to the context of
+the sensor?
+

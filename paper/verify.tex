@@ -2,7 +2,7 @@
 %\documentclass[9pt,conference]{sig-alternate}
 %\documentclass[9pt,conference]{sig-alternate}
 %\documentclass[10pt,print,letterpaper,nocopyrightspace]{sigplan-proc-varsize}
-\documentclass[10pt,print,letterpaper]{sigplan-proc-varsize}
+\documentclass[10pt,print,letterpaper]{sig-alternate-ipsn13}
 
 \usepackage{amsmath,epsfig}
 \usepackage{url}
@@ -11,11 +11,11 @@
 \usepackage{subfigure}
 \usepackage{dsfont}
 \usepackage{boxedminipage}
-\ifx\pdfoutput\undefined
-\usepackage[hypertex]{hyperref}
-\else
-\usepackage[pdftex,hypertexnames=false]{hyperref}
-\fi
+% \ifx\pdfoutput\undefined
+% \usepackage[hypertex]{hyperref}
+% \else
+% \usepackage[pdftex,hypertexnames=false]{hyperref}
+% \fi
 
 \usepackage{amssymb}
 \usepackage{wasysym}
@@ -58,7 +58,8 @@
 %\CopyrightYear{2008} 
 %\crdata{978-1-60558-096-8/08/09} 
 
-\title{Towards Empirically-Driven Verification in Buildings}
+%\title{Towards Empirically-Driven Verification in Buildings}
+\title{On Data Mining Building Sensor Data}
 %\numberofauthors{1} 
 %\author{\alignauthor Stephen Dawson-Haggerty, Jorge Ortiz, Xiaofan Jiang and David Culler\\
 %\affaddr{Computer Science Division}\\
@@ -171,7 +172,15 @@ me and me\\
 
 \input{intro}
 
-
+% \begin{itemize}
+% \item Buildings are relying more and more on software 
+% \item Software relies on sensors; uses metadata to contextualize the data
+% \item Metadata is inputted by human, error-prone; changes over time, becomes stale.
+% \item This is perhaps not very common in a single building, but huge problem at scale.
+% \item automatic verification is necessary
+% \item three types: categorical, spatial, functional
+% \item we show how much of each we can get emprirically on the first two; prior work handles functional.
+% \end{itemize}
 
 \newpage
 
@@ -190,6 +199,7 @@ me and me\\
 \section{Empirical Verification}
 \subsection{Spatial, Categorical, and Functional}
 \subsection{Challenges}
+\input{cat}
 
 \newpage
 
