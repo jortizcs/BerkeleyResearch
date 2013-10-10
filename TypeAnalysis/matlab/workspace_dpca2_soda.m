@@ -468,7 +468,7 @@ end
 
 
 %%
-clear all;
+% clear all;
 %%
 clear tp;
 tp = TypeHierarchy();

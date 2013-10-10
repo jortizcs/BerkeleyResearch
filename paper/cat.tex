@@ -21,3 +21,19 @@ Therefore, the goal is to pick out features that allow us to differentiate betwe
 Can we pull out certain frequency bands that are particularly informative and representative with respect to the context of
 the sensor?
 
+\subsection{Experimental Setup}
+\begin{figure}[h!]
+\centering
+  \includegraphics[width=0.45\textwidth]{./figs/SDH3_crop}
+\caption{We collect data from 15 sensors in 5 rooms sitting on 4 different floors. This is a map of a section of the 3rd floor
+in Sutardja Dai Hall.}
+\label{fig:sdh}
+\end{figure}
+
+We examine the stream values by compressing each trace into a [mean, standard deviation] tuple.  We can observe in the figure that there 
+are two major clusters, four minor clusters, and portion segmented off.  Several sub-types are in the mix in the two major clusters.
+We explore a secondary approach for teasing the sub-types within those clusters apart.  Based on this initial observation, we build a
+classifier that uses the aforementioned tuple at a feature vector to separate the data set into these clusters.
+
+Setpoints and other parameters can usually be identified by their standard deviation, which is 0, typically.  There are a few instances where 
+the setpoint is changed, that causes the standard deviation to increase slightly.

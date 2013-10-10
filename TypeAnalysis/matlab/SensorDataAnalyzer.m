@@ -564,6 +564,7 @@ classdef SensorDataAnalyzer < handle
                                         obj.filestats{length(obj.filestats),2} = mean(data(:,2));
                                         obj.filestats{length(obj.filestats),3} = std(data(:,2));
                                         obj.filestats{length(obj.filestats),4} = mode(data(:,2));
+                                        obj.filestats{length(obj.filestats),5} = median(data(:,2));
                                         
                                         iratio = length(data);
                                         % resample the underlying data
