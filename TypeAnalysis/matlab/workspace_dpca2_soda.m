@@ -497,14 +497,18 @@ dict = tp.getChildren('F');
 dict = [dict; tp.getChildren('psi')];
 dict = dict';
 %%
-sda = SensorDataAnalyzer(0, '/Volumes/share/data/scada/UCProject_UCB_SODAHALL');
+clear sda;
+%sda = SensorDataAnalyzer(0, '/Volumes/share/data/scada/UCProject_UCB_SODAHALL');
+sda = SensorDataAnalyzer(0, '/Users/jortiz/pangia/scada/UCProject_UCB_SODAHALL/');
 %sda = SensorDataAnalyzer(0, '/Users/jortiz/Dropbox/dissertation/BerkeleyResearch/TypeAnalysis/data/');
-%[accuracy] = sda.assessSoda(dict);
-
-
+%dict={'ASO','AGN'};
+dict={'MAT', 'SAS', 'ART', 'ARS'};
+% [accuracy] = sda.assessSoda(dict);
+[accuracy, mdl_emd, mdl_mnsd, mdl3_hist] = sda.assessSoda(dict);
+save('/Users/jortiz/Dropbox/dissertation/BerkeleyResearch/TypeAnalysis/matlab/mat_sas_art_ars.mat');
 % [DATA, MVARDATA, GT, GTMVAR, stats]=sda.Test_DynDataSoda(dict, 1, 5);
 
-[stats]=sda.Test2_DynDataSoda(dict);
+%[stats]=sda.Test2_DynDataSoda(dict);
 
 %%
 
@@ -514,8 +518,8 @@ GT = cell(0,0);
 % psi blue
 figure;
 % for all the types found, plot them to see how well they separate
-j=1;
-while j<length(abcstats)
+j=3200;
+while j<4501%length(abcstats)
     name = abcstats{j,1};
     mn = abcstats{j,2};
     sd = abcstats{j,3};
@@ -533,7 +537,7 @@ while j<length(abcstats)
         clr = 'b*';
     end
     scatter([mn],[sd], clr);
-    %text(mn, sd, category);
+    text(mn, sd, category);
     hold on;
     j = j+1;
     

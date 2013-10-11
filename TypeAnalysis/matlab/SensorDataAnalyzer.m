@@ -107,7 +107,7 @@ classdef SensorDataAnalyzer < handle
             end
         end
         
-        function [accuracy] = assessSoda(obj, dict)
+        function [accuracy, mdl_emd, mdl_mnsd, mdl3_hist] = assessSoda(obj, dict)
             %[DATA, MVARDATA, GT, GTMVAR, stats]=obj.DynDataSoda(dict, 1, 5);
             [DATA, MVARDATA, GT, GTMVAR, stats]=obj.Test_DynDataSoda(dict, 1, 5);
             
@@ -119,6 +119,7 @@ classdef SensorDataAnalyzer < handle
                 size(DATA)
                 size(GT)
                 mdl = ClassificationKNN.fit(DATA(1:mid,:),GT(1:mid));
+                mdl_emd = mdl;
                 
                 cnt=0;
                 for i=mid+1:len
@@ -156,11 +157,12 @@ classdef SensorDataAnalyzer < handle
             if ~isempty(MVARDATA) && ~isempty(GTMVAR)
                 mid = floor(size(MVARDATA,1)/2);
                 len = length(MVARDATA);
-                mdl = ClassificationKNN.fit(MVARDATA(1:mid,:),GTMVAR(1:mid));
+                mdl = ClassificationKNN.fit(MVARDATA(1:mid,1:2),GTMVAR(1:mid));
+                mdl_mnsd=mdl;
                 
                 cnt=0;
                 for i=mid+1:len
-                   if strcmp(predict(mdl,MVARDATA(i,:)),GTMVAR(i))==1
+                   if strcmp(predict(mdl,MVARDATA(i,1:2)),GTMVAR(i))==1
                        cnt=cnt+1;
                    end
                 end
@@ -171,7 +173,45 @@ classdef SensorDataAnalyzer < handle
                 
                 fprintf('Trying w/PCA...');
                 % try with PCA
-                [wcoeff,score,latent,tsquared,explained] = pca(MVARDATA, 'VariableWeights','variance');
+                [wcoeff,score,latent,tsquared,explained] = pca(MVARDATA(:,1:2), 'VariableWeights','variance');
+                top_k = 1;
+                while sum(explained(1,1:top_k))<0.95
+                    top_k=top_k+1;
+                end
+                mdl2 = ClassificationKNN.fit(score(1:mid, 1:top_k), GTMVAR(1:mid));
+                cnt=0;
+                for i=mid+1:len
+                   if strcmp(predict(mdl2,score(i,1:top_k)),GTMVAR(i))==1
+                       cnt=cnt+1;
+                   end
+                end
+
+                pca_acc=cnt/(len-mid);
+                fprintf('After PCA:  accuracy=%f\n',pca_acc);
+
+            end
+            
+            fprintf('\n\nAnalyzing histogram(3) approach...\n');
+            if ~isempty(MVARDATA) && ~isempty(GTMVAR)
+                mid = floor(size(MVARDATA,1)/2);
+                len = length(MVARDATA);
+                mdl = ClassificationKNN.fit(MVARDATA(1:mid,3:5),GTMVAR(1:mid));
+                mdl_hist = mdl;
+                
+                cnt=0;
+                for i=mid+1:len
+                   if strcmp(predict(mdl,MVARDATA(i,3:5)),GTMVAR(i))==1
+                       cnt=cnt+1;
+                   end
+                end
+
+                accuracy=cnt/(len-mid);
+                clusters = GTMVAR;
+                fprintf('\n\nBefore PCA:  accuracy=%f\n',accuracy);
+                
+                fprintf('Trying w/PCA...');
+                % try with PCA
+                [wcoeff,score,latent,tsquared,explained] = pca(MVARDATA(:,3:5), 'VariableWeights','variance');
                 top_k = 1;
                 while sum(explained(1,1:top_k))<0.95
                     top_k=top_k+1;
@@ -272,6 +312,8 @@ classdef SensorDataAnalyzer < handle
             folders = dir(base);
             w = 100;    %window for dpca
             DATA=[];
+            HISTDATA=[];
+            bins=10;
             total_pts = 0;
             stats = cell(0,0);
             sidx = 1;
@@ -387,6 +429,14 @@ classdef SensorDataAnalyzer < handle
                                             remove_set = find(n>1);
                                         end
                                         
+                                        mn = mean(data(:,1))
+                                        sd = std(data(:,1))
+                                        type
+                                        [N,X]=hist(data(:,1),bins);
+                                        [~,I] = sort(N);
+                                        MVARDATA = [MVARDATA; mn, sd, X(I(bins)), X(I(bins-1)), X(I(bins-2))];
+                                        GTMVAR{length(GTMVAR)+1,1} = type;
+                                        
                                         iratio = length(data);
                                         % resample the underlying data
                                         data = interp1(data(:,1),data(:,2),newv', 'spline');
@@ -395,11 +445,7 @@ classdef SensorDataAnalyzer < handle
                                         stats{sidx,2} = {'interpolation ratio', iratio};
                                         sidx = sidx +1;
                                         
-                                        mn = mean(data(:,1))
-                                        sd = std(data(:,1))
-                                        type
-                                        MVARDATA = [MVARDATA; mn, sd];
-                                        GTMVAR{length(GTMVAR)+1,1} = type;
+                                        
 
                                         % emd shit
                                         [IMFS, REAGG_IMFS] = StripAgg(data,1/60);
@@ -445,6 +491,7 @@ classdef SensorDataAnalyzer < handle
             folders = dir(base);
             w = 100;    %window for dpca
             DATA=[];
+            bins=10;
             total_pts = 0;
             stats = cell(0,0);
             sidx = 1;
@@ -467,7 +514,8 @@ classdef SensorDataAnalyzer < handle
             for i=4:size(folders,1)-1
                 fname= folders(i).name;
                 thisdir = strcat(strcat(base, fname));
-                if isdir(thisdir)        
+                if isdir(thisdir)
+                    obj.renameAll
                     system(strcat(['cp' ' ' obj.renameAll ' ' thisdir]));
                     cd(thisdir);
                     system('source rnall2');
@@ -506,6 +554,7 @@ classdef SensorDataAnalyzer < handle
                             data = importdata('testres.csv');
                             system('rm -f testres.csv rnall2');
 
+                            size(data)
                             % bin and populate
                             if ~isempty(data)
                                 
@@ -577,7 +626,9 @@ classdef SensorDataAnalyzer < handle
                                         mn = mean(data(:,1))
                                         sd = std(data(:,1))
                                         type
-                                        MVARDATA = [MVARDATA; mn, sd];
+                                        [N,X]=hist(data(:,1),bins);
+                                        [~,I] = sort(N);
+                                        MVARDATA = [MVARDATA; mn, sd, X(I(bins)), X(I(bins-1)), X(I(bins-2))];
                                         GTMVAR{length(GTMVAR)+1,1} = type;
 
                                         % emd shit
@@ -638,8 +689,8 @@ classdef SensorDataAnalyzer < handle
                                 end
                                 
                             end
-%                         else
-%                             fprintf('\tInvalid: %s\n', files(j,1).name);
+                        else
+                            fprintf('\tInvalid: %s\n', files(j,1).name);
                         end
                     end
                 end

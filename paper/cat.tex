@@ -37,3 +37,16 @@ classifier that uses the aforementioned tuple at a feature vector to separate th
 
 Setpoints and other parameters can usually be identified by their standard deviation, which is 0, typically.  There are a few instances where 
 the setpoint is changed, that causes the standard deviation to increase slightly.
+
+% ASO vs AGT
+% Before PCA:  accuracy=0.999505
+% Trying w/PCA...
+% After PCA:  accuracy=0.782284
+%
+% Analyzing mean & standard deviation approach...
+% Before PCA:  accuracy=0.993333
+% Trying w/PCA...After PCA:  accuracy=0.846667
+%
+% Analyzing histogram(3) approach...
+% Before PCA:  accuracy=0.993333
+% Trying w/PCA...After PCA:  accuracy=0.980000
