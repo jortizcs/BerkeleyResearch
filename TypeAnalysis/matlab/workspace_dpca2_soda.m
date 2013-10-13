@@ -502,24 +502,30 @@ clear sda;
 sda = SensorDataAnalyzer(0, '/Users/jortiz/pangia/scada/UCProject_UCB_SODAHALL/');
 %sda = SensorDataAnalyzer(0, '/Users/jortiz/Dropbox/dissertation/BerkeleyResearch/TypeAnalysis/data/');
 %dict={'ASO','AGN'};
-dict={'MAT', 'SAS', 'ART', 'ARS'};
+dict={'MAT', 'SAS', 'SAT', 'ART', 'ARS'};
 % [accuracy] = sda.assessSoda(dict);
-[accuracy, mdl_emd, mdl_mnsd, mdl3_hist] = sda.assessSoda(dict);
-save('/Users/jortiz/Dropbox/dissertation/BerkeleyResearch/TypeAnalysis/matlab/mat_sas_art_ars.mat');
+% [accuracy, mdl_emd, mdl_mnsd, mdl3_hist] = sda.assessSoda(dict);
+% save('/Users/jortiz/Dropbox/dissertation/BerkeleyResearch/TypeAnalysis/matlab/mat_sas_art_ars.mat');
 % [DATA, MVARDATA, GT, GTMVAR, stats]=sda.Test_DynDataSoda(dict, 1, 5);
-
+[MVARDATA, GTMVAR, mdl_gauss] = sda.assessSoda_gmm(dict);
 %[stats]=sda.Test2_DynDataSoda(dict);
+
 
 %%
 
-abcstats=sda.filestats;
+%abcstats=sda.filestats;
+%load('./filestats.mat');
 GT = cell(0,0);
 % F red
 % psi blue
 figure;
+%dict={'MAT', 'SAS', 'SAT', 'ART', 'ARS'};
+dict={'ARS', 'ART'};
+only_data = [];
+only_data_labels = cell(0,0);
 % for all the types found, plot them to see how well they separate
-j=3200;
-while j<4501%length(abcstats)
+j=1;
+while j<length(abcstats)
     name = abcstats{j,1};
     mn = abcstats{j,2};
     sd = abcstats{j,3};
@@ -529,29 +535,93 @@ while j<4501%length(abcstats)
             category = dict{k};
         end
     end
-    GT{length(GT)+1} = category;
-    clr='co';
-    if strcmp(tp.getParent(category), 'F')
-        clr = 'r*';
-    elseif strcmp(tp.getParent(category), 'psi')
-        clr = 'b*';
+    if strcmp(category, 'NONE')==0
+        GT{length(GT)+1} = category;
+        clr='co';
+        if strcmp(category, 'ART')
+            clr = 'r*';
+        elseif strcmp(category, 'ARS')
+            clr = 'b*';
+        end
+        scatter([mn],[sd], clr);
+        %text(mn, sd, category);
+        
+        %%%%%%%%% record the subset %%%%%%%%%%%%
+        only_data = [only_data; mn, sd];
+        only_data_labels{length(only_data_labels)+1,1}=category;
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        
+        hold on;
     end
-    scatter([mn],[sd], clr);
-    text(mn, sd, category);
-    hold on;
     j = j+1;
     
     if mod(j,1000)==0
         j
     end
 end
+%%
+%dict={'MAT', 'SAS', 'SAT', 'ART', 'ARS'};
+dict = {'ART', 'ARS'};
+if ~isempty(only_data) && ~isempty(only_data_labels)
+    mid = floor(size(only_data,1)/2);
+    len = length(only_data);
+    mdl = gmdistribution.fit(only_data(1:mid,1:2),length(dict), 'Regularize',1e-5);
+    mdl_gauss = mdl;
+end
 
+%%
 
+for i=1:mid
+scatter(only_data(i,1), only_data(i,2), 'r*');
+text(only_data(i,1), only_data(i,2), only_data_labels{i});
+hold on;
+end
 
+%%
 
+%init
+clusterid_type_distro = cell(length(dict), length(dict));
+for i=1:length(dict)
+    for j=1:length(dict)
+        clusterid_type_distro{i,j}=[];
+    end
+end
 
+for i=1:mid
+    val = only_data(i,:);
+    category = only_data_labels(i);
+    id = find(strcmp(dict(1,:),category)==1);
+    P = posterior(mdl_gauss, val);
+    for j=1:length(P)
+        pvec = clusterid_type_distro{j,id};
+        pvec = [pvec; P(j)];
+        clusterid_type_distro{j,id} = pvec;
+    end
+end
 
+for i=1:length(dict)
+    for j=1:length(dict)
+        clusterid_type_distro{i,j} = mean(clusterid_type_distro{i,j});
+    end
+end
 
+%%
+correct = 0;
+
+for j=mid+1:length(only_data)
+    P = posterior(mdl_gauss, only_data(j,:));
+    category = only_data_labels(j);
+    catid = find(strcmp(dict(1,:),category)==1);
+    for i=1:length(P)
+        P(i) = P(i) * clusterid_type_distro{i,catid};
+    end
+
+    if find(P(:)==max(P)) == catid
+        correct = correct+1;
+    end
+end
+
+correct/(length(only_data)-(mid+1)+1)
 
 
 

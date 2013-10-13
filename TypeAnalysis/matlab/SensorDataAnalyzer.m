@@ -107,7 +107,20 @@ classdef SensorDataAnalyzer < handle
             end
         end
         
-        function [accuracy, mdl_emd, mdl_mnsd, mdl3_hist] = assessSoda(obj, dict)
+        function [MVARDATA, GTMVAR, mdl_gauss] = assessSoda_gmm(obj, dict)
+            [DATA, MVARDATA, GT, GTMVAR, stats]=obj.Test_DynDataSoda(dict, 1, 5);
+            fprintf('\n\nRunning GMM\n');
+            if ~isempty(MVARDATA) && ~isempty(GTMVAR)
+                mid = floor(size(MVARDATA,1)/2);
+                len = length(MVARDATA);
+                mdl = gmdistribution.fit(MVARDATA(1:mid,1:2),length(dict), 'Regularsize');
+                mdl_gauss = mdl;
+            end
+            fprintf('...done\n');
+        end
+
+        
+        function [accuracy, mdl_emd, mdl_mnsd, mdl_hist, mdl_gauss] = assessSoda(obj, dict)
             %[DATA, MVARDATA, GT, GTMVAR, stats]=obj.DynDataSoda(dict, 1, 5);
             [DATA, MVARDATA, GT, GTMVAR, stats]=obj.Test_DynDataSoda(dict, 1, 5);
             
@@ -228,6 +241,8 @@ classdef SensorDataAnalyzer < handle
                 fprintf('After PCA:  accuracy=%f\n',pca_acc);
 
             end
+            
+            
             fprintf('\n\n');
         end
         
@@ -295,13 +310,6 @@ classdef SensorDataAnalyzer < handle
             fprintf('Done\n\n\n');
 
         end
-        
-        
-        
-        
-        
-        
-        
         
         
         function [DATA, MVARDATA, GT, GTMVAR, stats]=DynDataSoda(obj, dict, run_emd, imfband)
@@ -487,7 +495,8 @@ classdef SensorDataAnalyzer < handle
             
             base = obj.rootdir;
             cd (base);
-            sz=20000;
+            sz=20000; %optimal
+            %sz = 3600;
             folders = dir(base);
             w = 100;    %window for dpca
             DATA=[];
@@ -823,7 +832,9 @@ classdef SensorDataAnalyzer < handle
             end
          
         end
-    
+        
+        
+        
     
     
     
